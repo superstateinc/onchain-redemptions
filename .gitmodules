@@ -7,3 +7,6 @@
 [submodule "lib/openzeppelin-contracts"]
 	path = lib/openzeppelin-contracts
 	url = https://github.com/OpenZeppelin/openzeppelin-contracts
+[submodule "lib/frax-oracles"]
+	path = lib/frax-oracles
+	url = https://github.com/FraxFinance/frax-oracles
