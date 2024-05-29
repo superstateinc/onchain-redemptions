@@ -5,11 +5,12 @@ import {Test, console} from "forge-std/Test.sol";
 import {Redemption} from "../src/Redemption.sol";
 import {Oracle} from "./Oracle.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+import {AllowList} from "ustb/src/AllowList.sol";
 
 contract RedemptionTest is Test {
     address public admin = address(this);
 
-    address constant allowList = 0x42d75C8FdBBF046DF0Fe1Ff388DA16fF99dE8149;
+    AllowList constant allowList = AllowList(0x42d75C8FdBBF046DF0Fe1Ff388DA16fF99dE8149);
     address allowListAdmin = 0x8C7Db8A96d39F76D9f456db23d591C2FDd0e2F8a;
 
     IERC20 constant USTB = IERC20(0x43415eB6ff9DB7E26A15b704e7A3eDCe97d31C4e);
@@ -17,7 +18,7 @@ contract RedemptionTest is Test {
     address constant _ustb_holder = 0xB8851D8fdd9a007A33f6b45BF602046644aBE81f;
 
     uint256 constant usdc_amount = 10_000_000_000_000;
-    uint256 constant entity_id = 10_000_000_000_000;
+    uint256 constant entity_id = 1;
 
     Oracle public oracle;
     Redemption public redemption;
@@ -37,13 +38,7 @@ contract RedemptionTest is Test {
         assertGe(USDC.balanceOf(address(redemption)), 0);
 
         vm.startPrank(allowListAdmin);
-        bytes memory data = abi.encodeWithSignature("setEntityIdForAddress(uint256,address)", entity_id, address(redemption));
-        (bool success,) = address(USTB).call(data);
-        require(success, "Setting perms failed");
-
-        bytes memory data2 = abi.encodeWithSignature("setIsAllowed(uint256,bool)", entity_id, true);
-        (bool success2,) = address(USTB).call(data2);
-        require(success2, "Setting perms 2 failed");
+        allowList.setEntityIdForAddress(entity_id, address(redemption));
 
         vm.stopPrank();
     }
@@ -53,10 +48,6 @@ contract RedemptionTest is Test {
         redemption.withdraw(address(USDC), admin, usdc_amount);
 
         assertEq(USDC.balanceOf(admin), usdc_amount);
-
-        hoax(admin);
-        vm.expectRevert(bytes("Not enough balance"));
-        redemption.withdraw(address(USDC), admin, 1);
     }
 
     function testWithdrawNotAdmin() public {
@@ -67,25 +58,83 @@ contract RedemptionTest is Test {
 
     function testWithdrawAmountZero() public {
         hoax(admin);
-        vm.expectRevert(bytes("TODO 1"));
+        vm.expectRevert(bytes("Amount cant be zero"));
         redemption.withdraw(address(USDC), admin, 0);
+    }
+
+    function testWithdrawBalanceZero() public {
+        hoax(admin);
+        vm.expectRevert(bytes("Not enough balance"));
+        redemption.withdraw(address(USTB), admin, 1);
+    }
+
+    function testRedeemAmountTooLarge() public {
+        uint256 ustbBalance = USTB.balanceOf(_ustb_holder);
+
+        vm.startPrank(_ustb_holder);
+        USTB.approve(address(redemption), ustbBalance);
+        // Not enough USDC in the contract
+        vm.expectRevert("usdcOut > contract balance");
+        redemption.redeem(ustbBalance);
+        vm.stopPrank();
     }
 
     function testRedeem() public {
         assertEq(USDC.balanceOf(_ustb_holder), 0);
-
         uint256 ustbBalance = USTB.balanceOf(_ustb_holder);
 
+        (,, uint256 usdPerUstbChainlinkRaw) = redemption.getChainlinkPrice();
+        // go from 6 decimal places to 18 in first multiplication
+        // second multiplication is to ensure we have the right decimal places for ustb
+        uint256 ustbAmount = ((usdc_amount * 1e12) * 1e6) / usdPerUstbChainlinkRaw;
+
+        assertGe(ustbBalance, ustbAmount, "Don't redeem more than holder has");
+
         vm.startPrank(_ustb_holder);
-        USDC.approve(address(redemption), ustbBalance);
-        redemption.redeem(ustbBalance);
+        USTB.approve(address(redemption), ustbAmount);
+        // TODO: emit
+        redemption.redeem(ustbAmount);
         vm.stopPrank();
 
-        assertEq(USTB.balanceOf(_ustb_holder), 0);
+        uint256 redeemerUsdcBalance = USDC.balanceOf(_ustb_holder);
+
+        assertEq(USTB.balanceOf(_ustb_holder), ustbBalance - ustbAmount);
+        assertEq(usdc_amount - USDC.balanceOf(address(redemption)), redeemerUsdcBalance);
+
         assertEq(USTB.balanceOf(address(redemption)), 0);
+        assertEq(USDC.balanceOf(address(redemption)), usdc_amount - redeemerUsdcBalance);
+    }
 
-        // TODO: assert USDC amount in _ustb_holder
+    // TODO: bad data
 
+    function testRedeemAmountZeroFail() public {
+        uint256 ustbBalance = USTB.balanceOf(_ustb_holder);
 
+        hoax(_ustb_holder);
+        vm.expectRevert("ustbRedemptionAmount cannot be 0");
+        redemption.redeem(0);
+    }
+
+    function testAdminSetOracleDelay() public {
+        uint256 newDelay = 1234567;
+        hoax(admin);
+        //TODO: expect emit
+        redemption.setMaximumOracleDelay(newDelay);
+
+        assertEq(newDelay, redemption.maximumOracleDelay());
+    }
+
+    function testNonAdminSetOracleDelayFail() public {
+        uint256 newDelay = 1234567;
+        hoax(_ustb_holder);
+        vm.expectRevert("Not admin");
+        redemption.setMaximumOracleDelay(newDelay);
+    }
+
+    function testAdminSetOracleDelaySameFail() public {
+        uint256 oldDelay = redemption.maximumOracleDelay();
+        hoax(admin);
+        vm.expectRevert("delays cant be the same");
+        redemption.setMaximumOracleDelay(oldDelay);
     }
 }

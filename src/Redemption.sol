@@ -4,14 +4,9 @@ pragma solidity ^0.8.26;
 import {AggregatorV3Interface} from "chainlink/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
-import "forge-std/console.sol";
 
-// Oracle integration borrowed from: https://github.com/FraxFinance/frax-oracles/blob/bd56532a3c33da95faed904a5810313deab5f13c/src/abstracts/ChainlinkOracleWithMaxDelay.sol
 contract Redemption {
     using SafeERC20 for IERC20;
-
-    /// @notice The precision of the oracle
-    uint256 public constant ORACLE_PRECISION = 1e18;
 
     /// @notice Chainlink aggregator
     address public immutable CHAINLINK_FEED_ADDRESS;
@@ -45,16 +40,19 @@ contract Redemption {
         CHAINLINK_FEED_DECIMALS = AggregatorV3Interface(CHAINLINK_FEED_ADDRESS).decimals();
         CHAINLINK_FEED_PRECISION = 10 ** uint256(CHAINLINK_FEED_DECIMALS);
 
-        maximumOracleDelay = 100000000000000000000; // TODO
+        // TODO: currently 28 hours in seconds, confirm with chainlink their write cadence which should always be 24 hours
+        maximumOracleDelay = 100_800; // TODO param
+
         ADMIN = _admin;
         USTB = IERC20(_ustb);
         USDC = IERC20(_usdc);
     }
 
     function _requireAuthorized() internal view {
-        //        require(msg.sender == ADMIN, Unauthorized());
         require(msg.sender == ADMIN, "Not admin"); // TODO
     }
+
+    // Oracle integration borrowed from: https://github.com/FraxFinance/frax-oracles/blob/bd56532a3c33da95faed904a5810313deab5f13c/src/abstracts/ChainlinkOracleWithMaxDelay.sol
 
     /// @notice The ```SetMaximumOracleDelay``` event is emitted when the max oracle delay is set
     /// @param oldMaxOracleDelay The old max oracle delay
@@ -64,6 +62,7 @@ contract Redemption {
     /// @notice The ```_setMaximumOracleDelay``` function sets the max oracle delay to determine if Chainlink data is stale
     /// @param _newMaxOracleDelay The new max oracle delay
     function _setMaximumOracleDelay(uint256 _newMaxOracleDelay) internal {
+        require(maximumOracleDelay != _newMaxOracleDelay, "delays cant be the same"); //TODO
         emit SetMaximumOracleDelay({oldMaxOracleDelay: maximumOracleDelay, newMaxOracleDelay: _newMaxOracleDelay});
         maximumOracleDelay = _newMaxOracleDelay;
     }
@@ -92,31 +91,20 @@ contract Redemption {
         return _getChainlinkPrice();
     }
 
-    /// @notice The ```getUstbPerUsdChainlink``` function returns USTB per USD using the Chainlink oracle
-    /// @return _isBadData If the Chainlink oracle is stale
-    /// @return _ustbPerUsd The Mkr per USD price
-    function getUstbPerUsdChainlink() public view returns (bool _isBadData, uint256 _ustbPerUsd) {
-        uint256 _usdPerUstbChainlinkRaw;
-        (_isBadData,, _usdPerUstbChainlinkRaw) = _getChainlinkPrice();
-        _ustbPerUsd = (ORACLE_PRECISION * CHAINLINK_FEED_PRECISION) / _usdPerUstbChainlinkRaw;
-    }
-
-    // user approves usdc in our ui, outside of this contract
-    // user calls redeem function
-    // redeem function takes ustb amount as arg, spends allowance of ustb, calcs usdc out amount, burns ustb
     function redeem(uint256 ustbRedemptionAmount) external {
-        (bool isBadData, uint256 ustbPerUsd) = getUstbPerUsdChainlink();
+        require(ustbRedemptionAmount > 0, "ustbRedemptionAmount cannot be 0"); //TODO
 
-        require(!isBadData, "TODO");
+        (bool isBadData,, uint256 usdPerUstbChainlinkRaw) = _getChainlinkPrice();
 
-        // TODO: check math in tests, it is probably wrong
-        uint256 usdcOut = (ustbRedemptionAmount * ustbPerUsd);
+        require(!isBadData, "isbaddata"); //TODO
 
-        // TODO: probably dont need this
-        //        require(usdcOut <= USDC.balanceOf(address(this)), "TODO");
+        // usdcOut will always be larger than ustbRedemptionAmount because ustb price only goes up and started at 10
+        uint256 usdcOut = (ustbRedemptionAmount * usdPerUstbChainlinkRaw) / CHAINLINK_FEED_PRECISION;
 
-        USTB.transferFrom(msg.sender, address(this), ustbRedemptionAmount);
-        USDC.transfer(msg.sender, usdcOut);
+        require(USDC.balanceOf(address(this)) >= usdcOut, "usdcOut > contract balance"); //TODO
+
+        USTB.safeTransferFrom({from: msg.sender, to: address(this), value: ustbRedemptionAmount});
+        USDC.safeTransfer({to: msg.sender, value: usdcOut});
 
         // TODO: generate and use USTB interface
         bytes memory data = abi.encodeWithSignature("burn(uint256)", ustbRedemptionAmount);
@@ -126,11 +114,10 @@ contract Redemption {
         //TODO: emit event
     }
 
-    // transfer in usdc, outside of this contract
     function withdraw(address _token, address to, uint256 amount) external {
         _requireAuthorized();
         //        require(amount > 0, BadArgs());
-        require(amount > 0, "TODO 1");
+        require(amount > 0, "Amount cant be zero"); // TODO
 
         IERC20 token = IERC20(_token);
         uint256 balance = token.balanceOf(address(this));
@@ -138,7 +125,7 @@ contract Redemption {
         //        require(balance >= amount, InsufficientBalance());
         require(balance >= amount, "Not enough balance"); //TODO
 
-        token.safeTransfer(to, amount);
+        token.safeTransfer({to: to, amount: amount});
 
         //TODO: emit event
     }

@@ -22,7 +22,7 @@ contract Oracle {
         returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)
     {
         roundId = 1;
-        answer = 10_000_000_000_000_000_000; // 10 with 18 decimals
+        answer = 10_192_577_000_000_000_000; // 18 decimals
         startedAt = 1_716_994_000;
         updatedAt = 1_716_994_030;
         answeredInRound = 1;
@@ -34,7 +34,7 @@ contract Oracle {
         returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)
     {
         roundId = 1;
-        answer = 10_000_000_000_000_000_000; // 10 with 18 decimals
+        answer = 10_192_577_000_000_000_000; // 18 decimals
         startedAt = 1_716_994_000;
         updatedAt = 1_716_994_030;
         answeredInRound = 1;
