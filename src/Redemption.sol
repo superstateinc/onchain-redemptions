@@ -125,7 +125,7 @@ contract Redemption {
         //        require(balance >= amount, InsufficientBalance());
         require(balance >= amount, "Not enough balance"); //TODO
 
-        token.safeTransfer({to: to, amount: amount});
+        token.safeTransfer({to: to, value: amount});
 
         //TODO: emit event
     }
