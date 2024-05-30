@@ -48,6 +48,12 @@ contract Redemption {
         USDC = IERC20(_usdc);
     }
 
+    fallback() external payable {
+        revert();
+    }
+
+    // TODO: view function for how much USTB can be redeemed
+
     function _requireAuthorized() internal view {
         require(msg.sender == ADMIN, "Not admin"); // TODO
     }

@@ -84,9 +84,9 @@ contract RedemptionTest is Test {
         uint256 ustbBalance = USTB.balanceOf(_ustb_holder);
 
         (,, uint256 usdPerUstbChainlinkRaw) = redemption.getChainlinkPrice();
-        // go from 6 decimal places to 18 in first multiplication
+        // go from 6 decimal places to 8 in first multiplication
         // second multiplication is to ensure we have the right decimal places for ustb
-        uint256 ustbAmount = ((usdc_amount * 1e12) * 1e6) / usdPerUstbChainlinkRaw;
+        uint256 ustbAmount = ((usdc_amount * 1e6) / usdPerUstbChainlinkRaw);
 
         assertGe(ustbBalance, ustbAmount, "Don't redeem more than holder has");
 
@@ -102,10 +102,15 @@ contract RedemptionTest is Test {
         assertEq(usdc_amount - USDC.balanceOf(address(redemption)), redeemerUsdcBalance);
 
         assertEq(USTB.balanceOf(address(redemption)), 0);
+        assertEq(USDC.balanceOf(address(redemption)), 6);
         assertEq(USDC.balanceOf(address(redemption)), usdc_amount - redeemerUsdcBalance);
     }
 
+    // TODO: more amount redeem tests / fuzz it
+
     // TODO: bad data
+
+    // TODO: test cant put ether in
 
     function testRedeemAmountZeroFail() public {
         uint256 ustbBalance = USTB.balanceOf(_ustb_holder);
