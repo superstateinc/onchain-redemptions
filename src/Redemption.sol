@@ -40,7 +40,7 @@ contract Redemption {
     /// @param redeemer The address of the entity redeeming
     /// @param ustbInAmount The amount of USTB to redeem
     /// @param usdcOutAmount The amount of USDC the redeemer gets back
-    event Redemption(address indexed redeemer, uint256 ustbInAmount, uint256 usdcOutAmount);
+    event Redeem(address indexed redeemer, uint256 ustbInAmount, uint256 usdcOutAmount);
 
     /// @dev Event emitted when tokens are withdrawn
     /// @param token The address of the token being withdrawn
@@ -58,20 +58,29 @@ contract Redemption {
     /// @dev Thrown when there isn't enough token balance in the contract
     error InsufficientBalance();
 
-    /// @dev Thrown when Chainlink Oracle data is too old
-    error StaleChainlinkData();
+    /// @dev Thrown when Chainlink Oracle data is bad
+    error BadChainlinkData();
 
-    constructor(address _admin, address _ustb, address _ustbChainlinkFeedAddress, address _usdc) {
+    constructor(
+        address _admin,
+        address _ustb,
+        address _ustbChainlinkFeedAddress,
+        address _usdc,
+        uint256 _maximumOracleDelay
+    ) {
         CHAINLINK_FEED_ADDRESS = _ustbChainlinkFeedAddress;
         CHAINLINK_FEED_DECIMALS = AggregatorV3Interface(CHAINLINK_FEED_ADDRESS).decimals();
         CHAINLINK_FEED_PRECISION = 10 ** uint256(CHAINLINK_FEED_DECIMALS);
 
-        // TODO: currently 28 hours in seconds, confirm with chainlink their write cadence which should always be 24 hours
-        maximumOracleDelay = 100_800; // TODO param
+        maximumOracleDelay = _maximumOracleDelay;
 
         ADMIN = _admin;
         USTB = IERC20(_ustb);
         USDC = IERC20(_usdc);
+    }
+
+    receive() external payable {
+        revert();
     }
 
     fallback() external payable {
@@ -102,8 +111,10 @@ contract Redemption {
         (, int256 _answer,, uint256 _chainlinkUpdatedAt,) =
             AggregatorV3Interface(CHAINLINK_FEED_ADDRESS).latestRoundData();
 
-        // If data is stale or negative, set bad data to true and return
-        _isBadData = _answer <= 0 || ((block.timestamp - _chainlinkUpdatedAt) > maximumOracleDelay);
+        // If data is stale or below first price, set bad data to true and return
+        // 10_000_000 is $10.000000 in the oracle format, that was our starting NAV per Share price for USTB
+        // The oracle should never return a price below this, because it is a simple treasury bill fund, NAV/S should go up
+        _isBadData = _answer <= 10_000_000 || ((block.timestamp - _chainlinkUpdatedAt) > maximumOracleDelay);
         _updatedAt = _chainlinkUpdatedAt;
         _price = uint256(_answer);
     }
@@ -123,17 +134,17 @@ contract Redemption {
         _ustbAmount = (USDC.balanceOf(address(this)) * CHAINLINK_FEED_PRECISION) / usdPerUstbChainlinkRaw;
     }
 
-    // TODO
+    /// @notice The ```redeem``` function allows users to redeem USTB for USDC at the current oracle price
+    /// @dev Will revert if oracle data is stale or there is not enough USDC in the contract
+    /// @param ustbInAmount The amount of USTB to redeem
     function redeem(uint256 ustbInAmount) external {
         if (ustbInAmount == 0) revert BadArgs();
 
         (bool isBadData,, uint256 usdPerUstbChainlinkRaw) = _getChainlinkPrice();
-        if (isBadData) revert StaleChainlinkData();
+        if (isBadData) revert BadChainlinkData();
 
-        // usdcOut will always be larger than ustbRedemptionAmount because USTB price only goes up and started at 10
-        // TODO: clarify this somehow, how can we support a token that's 1e8 decimals instead of 1e6
-        // How can we make this support other decimal? Read decimals from token?
-        // am i factoring out math that is making this less generic?
+        // TODO: decimals change @ max
+        // USTB, USTB Oracle, and USDC are all 6 decimal places
         uint256 usdcOutAmount = (ustbInAmount * usdPerUstbChainlinkRaw) / CHAINLINK_FEED_PRECISION;
 
         if (USDC.balanceOf(address(this)) < usdcOutAmount) revert InsufficientBalance();
@@ -142,10 +153,14 @@ contract Redemption {
         USDC.safeTransfer({to: msg.sender, value: usdcOutAmount});
         IUSTB(address(USTB)).burn(ustbInAmount);
 
-        emit Redemption({redeemer: msg.sender, ustbInAmount: ustbInAmount, usdcOutAmount: usdcOutAmount});
+        emit Redeem({redeemer: msg.sender, ustbInAmount: ustbInAmount, usdcOutAmount: usdcOutAmount});
     }
 
-    // TODO
+    /// @notice The ```withdraw``` function allows the admin to withdraw any type of ERC20
+    /// @dev Requires msg.sender to be the admin address
+    /// @param _token The address of the token to withdraw
+    /// @param to The address where the tokens are going
+    /// @param amount The amount of `_token` to withdraw
     function withdraw(address _token, address to, uint256 amount) external {
         _requireAuthorized();
         if (amount == 0) revert BadArgs();
