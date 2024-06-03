@@ -4,6 +4,7 @@ pragma solidity ^0.8.26;
 
 import {AggregatorV3Interface} from "chainlink/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+import {ERC20} from "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IUSTB} from "./IUSTB.sol";
 
@@ -21,6 +22,12 @@ contract Redemption {
 
     /// @notice Precision of USTB/USD chainlink feed
     uint256 public immutable CHAINLINK_FEED_PRECISION;
+
+    /// @notice Decimals of USDC
+    uint256 public immutable USDC_DECIMALS;
+
+    /// @notice Decimals of USTB
+    uint256 public immutable USTB_DECIMALS;
 
     /// @notice The USTB contract
     IERC20 public immutable USTB;
@@ -80,6 +87,9 @@ contract Redemption {
         ADMIN = _admin;
         USTB = IERC20(_ustb);
         USDC = IERC20(_usdc);
+
+        USTB_DECIMALS = ERC20(_ustb).decimals();
+        USDC_DECIMALS = ERC20(_usdc).decimals();
     }
 
     receive() external payable {
@@ -134,7 +144,9 @@ contract Redemption {
     /// @return _ustbAmount The maximum amount of USTB that can be redeemed
     function maxUstbRedemptionAmount() external view returns (uint256 _ustbAmount) {
         (,, uint256 usdPerUstbChainlinkRaw) = _getChainlinkPrice();
-        _ustbAmount = (USDC.balanceOf(address(this)) * CHAINLINK_FEED_PRECISION) / usdPerUstbChainlinkRaw;
+        // divide a USDC amount by the USD per USTB Chainlink price then scale back up to a USTB amount
+        _ustbAmount = (USDC.balanceOf(address(this)) * CHAINLINK_FEED_PRECISION * USTB_DECIMALS)
+            / (usdPerUstbChainlinkRaw * USDC_DECIMALS);
     }
 
     /// @notice The ```redeem``` function allows users to redeem USTB for USDC at the current oracle price
@@ -146,9 +158,9 @@ contract Redemption {
         (bool isBadData,, uint256 usdPerUstbChainlinkRaw) = _getChainlinkPrice();
         if (isBadData) revert BadChainlinkData();
 
-        // TODO: decimals change @ max
-        // USTB, USTB Oracle, and USDC are all 6 decimal places
-        uint256 usdcOutAmount = (ustbInAmount * usdPerUstbChainlinkRaw) / CHAINLINK_FEED_PRECISION;
+        // converts from a USTB amount to a USD amount, and then scales back up to a USDC amount
+        uint256 usdcOutAmount =
+            (ustbInAmount * usdPerUstbChainlinkRaw * USDC_DECIMALS) / (CHAINLINK_FEED_PRECISION * USTB_DECIMALS);
 
         if (USDC.balanceOf(address(this)) < usdcOutAmount) revert InsufficientBalance();
 
