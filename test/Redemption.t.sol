@@ -2,11 +2,12 @@
 pragma solidity ^0.8.26;
 
 import {Test, console} from "forge-std/Test.sol";
-import {Redemption} from "../src/Redemption.sol";
-import {IUSTB} from "../src/IUSTB.sol";
-import {TestOracle} from "./TestOracle.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {AllowList} from "ustb/src/AllowList.sol";
+import {TestOracle} from "./TestOracle.sol";
+import {Redemption} from "../src/Redemption.sol";
+import {IUSTB} from "../src/IUSTB.sol";
+import {deployRedemption} from "../script/Redemption.s.sol";
 
 contract RedemptionTest is Test {
     address public admin = address(this);
@@ -16,13 +17,13 @@ contract RedemptionTest is Test {
 
     IERC20 constant USTB = IERC20(0x43415eB6ff9DB7E26A15b704e7A3eDCe97d31C4e);
     IERC20 constant USDC = IERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
-    address constant _ustb_holder = 0xB8851D8fdd9a007A33f6b45BF602046644aBE81f;
+    address constant USTB_HOLDER = 0xB8851D8fdd9a007A33f6b45BF602046644aBE81f;
 
-    uint256 constant usdc_amount = 10_000_000_000_000;
-    uint256 constant entity_id = 1;
+    uint256 constant USDC_AMOUNT = 10_000_000_000_000;
+    uint256 constant ENTITY_ID = 1;
 
     // TODO: currently _maximumOracleDelay is 28 hours in seconds, confirm with chainlink their write cadence which should always be 24 hours
-    uint256 constant maximumOracleDelay = 100_800;
+    uint256 constant MAXIMUM_ORACLE_DELAY = 100_800;
 
     TestOracle public oracle;
     Redemption public redemption;
@@ -32,18 +33,21 @@ contract RedemptionTest is Test {
 
         // roundId, answer, startedAt, updatedAt, answeredInRound
         oracle = new TestOracle(1, 10_192_577, 1_716_994_000, 1_716_994_030, 1);
-        redemption = new Redemption(admin, address(USTB), address(oracle), address(USDC), maximumOracleDelay);
+
+        (address payable _address,,) =
+            deployRedemption(admin, address(USTB), address(oracle), address(USDC), MAXIMUM_ORACLE_DELAY);
+        redemption = Redemption(_address);
 
         // 10 million
-        deal(address(USDC), _ustb_holder, usdc_amount);
+        deal(address(USDC), USTB_HOLDER, USDC_AMOUNT);
 
-        hoax(_ustb_holder);
-        USDC.transfer(address(redemption), usdc_amount);
+        hoax(USTB_HOLDER);
+        USDC.transfer(address(redemption), USDC_AMOUNT);
 
         assertGe(USDC.balanceOf(address(redemption)), 0);
 
         vm.startPrank(allowListAdmin);
-        allowList.setEntityIdForAddress(entity_id, address(redemption));
+        allowList.setEntityIdForAddress(ENTITY_ID, address(redemption));
 
         vm.stopPrank();
     }
@@ -56,14 +60,14 @@ contract RedemptionTest is Test {
     function testWithdraw() public {
         hoax(admin);
         vm.expectEmit(true, true, true, true);
-        emit Redemption.Withdraw({token: address(USDC), withdrawer: admin, to: admin, amount: usdc_amount});
-        redemption.withdraw(address(USDC), admin, usdc_amount);
+        emit Redemption.Withdraw({token: address(USDC), withdrawer: admin, to: admin, amount: USDC_AMOUNT});
+        redemption.withdraw(address(USDC), admin, USDC_AMOUNT);
 
-        assertEq(USDC.balanceOf(admin), usdc_amount);
+        assertEq(USDC.balanceOf(admin), USDC_AMOUNT);
     }
 
     function testWithdrawNotAdmin() public {
-        hoax(_ustb_holder);
+        hoax(USTB_HOLDER);
         vm.expectRevert(Redemption.Unauthorized.selector);
         redemption.withdraw(address(USDC), admin, 1);
     }
@@ -81,9 +85,9 @@ contract RedemptionTest is Test {
     }
 
     function testRedeemAmountTooLarge() public {
-        uint256 ustbBalance = USTB.balanceOf(_ustb_holder);
+        uint256 ustbBalance = USTB.balanceOf(USTB_HOLDER);
 
-        vm.startPrank(_ustb_holder);
+        vm.startPrank(USTB_HOLDER);
         USTB.approve(address(redemption), ustbBalance);
         // Not enough USDC in the contract
         vm.expectRevert(Redemption.InsufficientBalance.selector);
@@ -92,32 +96,58 @@ contract RedemptionTest is Test {
     }
 
     function testRedeem() public {
-        assertEq(USDC.balanceOf(_ustb_holder), 0);
+        assertEq(USDC.balanceOf(USTB_HOLDER), 0);
 
-        uint256 ustbBalance = USTB.balanceOf(_ustb_holder);
+        uint256 ustbBalance = USTB.balanceOf(USTB_HOLDER);
         uint256 ustbAmount = redemption.maxUstbRedemptionAmount();
 
         assertGe(ustbBalance, ustbAmount, "Don't redeem more than holder has");
 
-        vm.startPrank(_ustb_holder);
+        vm.startPrank(USTB_HOLDER);
         USTB.approve(address(redemption), ustbAmount);
         vm.expectEmit(true, true, true, true);
-        emit IUSTB.Transfer({from: _ustb_holder, to: address(redemption), value: ustbAmount});
+        emit IUSTB.Transfer({from: USTB_HOLDER, to: address(redemption), value: ustbAmount});
         vm.expectEmit(true, true, true, true);
         emit IUSTB.Burn({burner: address(redemption), from: address(redemption), amount: ustbAmount});
         vm.expectEmit(true, true, true, true);
-        emit Redemption.Redeem({redeemer: _ustb_holder, ustbInAmount: ustbAmount, usdcOutAmount: 9999999999994});
+        emit Redemption.Redeem({redeemer: USTB_HOLDER, ustbInAmount: ustbAmount, usdcOutAmount: 9999999999994});
         redemption.redeem(ustbAmount);
         vm.stopPrank();
 
-        uint256 redeemerUsdcBalance = USDC.balanceOf(_ustb_holder);
+        uint256 redeemerUsdcBalance = USDC.balanceOf(USTB_HOLDER);
+        uint256 redemptionContractUsdcBalance = USDC.balanceOf(address(redemption));
 
-        assertEq(USTB.balanceOf(_ustb_holder), ustbBalance - ustbAmount);
-        assertEq(usdc_amount - USDC.balanceOf(address(redemption)), redeemerUsdcBalance);
+        assertEq(USTB.balanceOf(USTB_HOLDER), ustbBalance - ustbAmount);
+        assertEq(USDC_AMOUNT - redemptionContractUsdcBalance, redeemerUsdcBalance);
 
         assertEq(USTB.balanceOf(address(redemption)), 0);
-        assertEq(USDC.balanceOf(address(redemption)), 6);
-        assertEq(USDC.balanceOf(address(redemption)), usdc_amount - redeemerUsdcBalance);
+        assertEq(redemptionContractUsdcBalance, 6);
+        assertEq(redemptionContractUsdcBalance, USDC_AMOUNT - redeemerUsdcBalance);
+    }
+
+    function testRedeemFuzz(uint256 ustbRedeemAmount) public {
+        uint256 maxRedemptionAmount = redemption.maxUstbRedemptionAmount();
+
+        ustbRedeemAmount = bound(ustbRedeemAmount, 1, maxRedemptionAmount);
+
+        assertEq(USDC.balanceOf(USTB_HOLDER), 0);
+
+        uint256 redeemerUstbBalanceBefore = USTB.balanceOf(USTB_HOLDER);
+
+        vm.startPrank(USTB_HOLDER);
+        USTB.approve(address(redemption), ustbRedeemAmount);
+        redemption.redeem(ustbRedeemAmount);
+        vm.stopPrank();
+
+        uint256 redeemerUstbBalanceAfter = USTB.balanceOf(USTB_HOLDER);
+        uint256 redeemerUsdcBalanceAfter = USDC.balanceOf(USTB_HOLDER);
+        uint256 redemptionContractUsdcBalanceAfter = USDC.balanceOf(address(redemption));
+
+        assertEq(USTB.balanceOf(address(redemption)), 0, "Contract has 0 USTB balance");
+
+        assertEq(redeemerUstbBalanceAfter, redeemerUstbBalanceBefore - ustbRedeemAmount, "Redeemer has proper USTB balance");
+        assertEq(redeemerUsdcBalanceAfter, USDC_AMOUNT - redemptionContractUsdcBalanceAfter, "Redeemer has proper USDC balance");
+        assertEq(redemptionContractUsdcBalanceAfter, USDC_AMOUNT - redeemerUsdcBalanceAfter, "Contract has proper USDC balance");
     }
 
     function testRedeemBadDataLowPriceFail() public {
@@ -130,11 +160,11 @@ contract RedemptionTest is Test {
             _answeredInRound: _roundId + 1
         });
 
-        assertEq(USDC.balanceOf(_ustb_holder), 0);
+        assertEq(USDC.balanceOf(USTB_HOLDER), 0);
 
         uint256 ustbAmount = redemption.maxUstbRedemptionAmount();
 
-        vm.startPrank(_ustb_holder);
+        vm.startPrank(USTB_HOLDER);
         USTB.approve(address(redemption), ustbAmount);
         vm.expectRevert(Redemption.BadChainlinkData.selector);
         redemption.redeem(ustbAmount);
@@ -144,7 +174,7 @@ contract RedemptionTest is Test {
     function testRedeemMinimumPrice() public {
         vm.warp(block.timestamp + 86_400);
 
-    (uint80 _roundId,,,,) = oracle.latestRoundData();
+        (uint80 _roundId,,,,) = oracle.latestRoundData();
         oracle.update({
             _roundId: _roundId + 1,
             _answer: 10_000_001,
@@ -153,27 +183,27 @@ contract RedemptionTest is Test {
             _answeredInRound: _roundId + 1
         });
 
-        assertEq(USDC.balanceOf(_ustb_holder), 0);
+        assertEq(USDC.balanceOf(USTB_HOLDER), 0);
 
-        uint256 ustbBalance = USTB.balanceOf(_ustb_holder);
+        uint256 ustbBalance = USTB.balanceOf(USTB_HOLDER);
 
-        vm.startPrank(_ustb_holder);
+        vm.startPrank(USTB_HOLDER);
         USTB.approve(address(redemption), ustbBalance);
         redemption.redeem(ustbBalance);
         vm.stopPrank();
     }
 
     function testRedeemBadDataOldDataFail() public {
-        vm.warp(block.timestamp + maximumOracleDelay);
+        vm.warp(block.timestamp + MAXIMUM_ORACLE_DELAY);
 
-        assertEq(USDC.balanceOf(_ustb_holder), 0);
+        assertEq(USDC.balanceOf(USTB_HOLDER), 0);
 
-        uint256 ustbBalance = USTB.balanceOf(_ustb_holder);
+        uint256 ustbBalance = USTB.balanceOf(USTB_HOLDER);
         uint256 ustbAmount = redemption.maxUstbRedemptionAmount();
 
         assertGe(ustbBalance, ustbAmount, "Don't redeem more than holder has");
 
-        vm.startPrank(_ustb_holder);
+        vm.startPrank(USTB_HOLDER);
         USTB.approve(address(redemption), ustbAmount);
         vm.expectRevert(Redemption.BadChainlinkData.selector);
         redemption.redeem(ustbAmount);
@@ -181,7 +211,7 @@ contract RedemptionTest is Test {
     }
 
     function testRedeemAmountZeroFail() public {
-        hoax(_ustb_holder);
+        hoax(USTB_HOLDER);
         vm.expectRevert(Redemption.BadArgs.selector);
         redemption.redeem(0);
     }
@@ -200,7 +230,7 @@ contract RedemptionTest is Test {
     function testNonAdminSetOracleDelayFail() public {
         uint256 newDelay = 1234567;
 
-        hoax(_ustb_holder);
+        hoax(USTB_HOLDER);
         vm.expectRevert(Redemption.Unauthorized.selector);
         redemption.setMaximumOracleDelay(newDelay);
     }
@@ -212,7 +242,5 @@ contract RedemptionTest is Test {
         vm.expectRevert(Redemption.BadArgs.selector);
         redemption.setMaximumOracleDelay(oldDelay);
     }
-
-    // TODO: fuzz redeem test
 
 }

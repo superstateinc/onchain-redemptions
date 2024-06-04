@@ -16,6 +16,6 @@ solc_version = "0.8.26"
 
 [fuzz]
 # Amount of runs per fuzz test
-runs = 256
+runs = 4098
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

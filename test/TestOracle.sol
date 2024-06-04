@@ -28,29 +28,29 @@ contract TestOracle {
         answeredInRound = _answeredInRound;
     }
 
-    function decimals() external view returns (uint8) {
+    function decimals() external pure returns (uint8) {
         return 6;
     }
 
-    function description() external view returns (string memory) {
+    function description() external pure returns (string memory) {
         return "hi";
     }
 
-    function version() external view returns (uint256) {
+    function version() external pure returns (uint256) {
         return 1;
     }
 
-//    function getRoundData(uint80 _roundId)
-//        external
-//        view
-//        returns (uint80 _roundId, int256 _answer, uint256 _startedAt, uint256 _updatedAt, uint80 _answeredInRound)
-//    {
-//        _roundId = roundId;
-//        _answer = answer;
-//        _startedAt = startedAt;
-//        _updatedAt = updatedAt;
-//        _answeredInRound = answeredInRound;
-//    }
+    //    function getRoundData(uint80 _roundId)
+    //        external
+    //        view
+    //        returns (uint80 _roundId, int256 _answer, uint256 _startedAt, uint256 _updatedAt, uint80 _answeredInRound)
+    //    {
+    //        _roundId = roundId;
+    //        _answer = answer;
+    //        _startedAt = startedAt;
+    //        _updatedAt = updatedAt;
+    //        _answeredInRound = answeredInRound;
+    //    }
 
     function latestRoundData()
         external
