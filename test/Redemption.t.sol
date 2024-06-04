@@ -128,10 +128,7 @@ contract RedemptionTest is Test {
     function testRedeemFuzz(uint256 ustbRedeemAmount) public {
         uint256 maxRedemptionAmount = redemption.maxUstbRedemptionAmount();
 
-        // bound wasn't working so using assume
         ustbRedeemAmount = bound(ustbRedeemAmount, 1, maxRedemptionAmount);
-//        vm.assume(ustbRedeemAmount < maxRedemptionAmount + 1);
-//        vm.assume(ustbRedeemAmount > 0);
 
         assertEq(USDC.balanceOf(USTB_HOLDER), 0);
 
