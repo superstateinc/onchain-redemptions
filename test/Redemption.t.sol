@@ -2,11 +2,12 @@
 pragma solidity ^0.8.26;
 
 import {Test, console} from "forge-std/Test.sol";
-import {Redemption} from "../src/Redemption.sol";
-import {IUSTB} from "../src/IUSTB.sol";
-import {TestOracle} from "./TestOracle.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {AllowList} from "ustb/src/AllowList.sol";
+import {TestOracle} from "./TestOracle.sol";
+import {Redemption} from "../src/Redemption.sol";
+import {IUSTB} from "../src/IUSTB.sol";
+import {deployRedemption} from "../script/Redemption.s.sol";
 
 contract RedemptionTest is Test {
     address public admin = address(this);
@@ -32,7 +33,10 @@ contract RedemptionTest is Test {
 
         // roundId, answer, startedAt, updatedAt, answeredInRound
         oracle = new TestOracle(1, 10_192_577, 1_716_994_000, 1_716_994_030, 1);
-        redemption = new Redemption(admin, address(USTB), address(oracle), address(USDC), maximumOracleDelay);
+
+        (address payable _address,,) =
+            deployRedemption(admin, address(USTB), address(oracle), address(USDC), maximumOracleDelay);
+        redemption = Redemption(_address);
 
         // 10 million
         deal(address(USDC), _ustb_holder, usdc_amount);
@@ -144,7 +148,7 @@ contract RedemptionTest is Test {
     function testRedeemMinimumPrice() public {
         vm.warp(block.timestamp + 86_400);
 
-    (uint80 _roundId,,,,) = oracle.latestRoundData();
+        (uint80 _roundId,,,,) = oracle.latestRoundData();
         oracle.update({
             _roundId: _roundId + 1,
             _answer: 10_000_001,
@@ -214,5 +218,4 @@ contract RedemptionTest is Test {
     }
 
     // TODO: fuzz redeem test
-
 }
