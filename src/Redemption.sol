@@ -132,8 +132,8 @@ contract Redemption {
 
         // If data is stale or below first price, set bad data to true and return
         // 10_000_000 is $10.000000 in the oracle format, that was our starting NAV per Share price for USTB
-        // The oracle should never return a price equal to or below this, because it is a simple treasury bill fund, NAV/S should go up
-        _isBadData = _answer <= 10_000_000 || ((block.timestamp - _chainlinkUpdatedAt) > maximumOracleDelay);
+        // The oracle should never return a price much lower than this
+        _isBadData = _answer <= 7_000_000 || ((block.timestamp - _chainlinkUpdatedAt) > maximumOracleDelay);
         _updatedAt = _chainlinkUpdatedAt;
         _price = uint256(_answer);
     }
