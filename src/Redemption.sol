@@ -4,7 +4,6 @@ pragma solidity ^0.8.26;
 
 import {AggregatorV3Interface} from "chainlink/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
-import {ERC20} from "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IUSTB} from "./IUSTB.sol";
 
@@ -26,8 +25,14 @@ contract Redemption {
     /// @notice Decimals of USDC
     uint256 public immutable USDC_DECIMALS;
 
+    /// @notice Precision of USDC
+    uint256 public immutable USDC_PRECISION;
+
     /// @notice Decimals of USTB
     uint256 public immutable USTB_DECIMALS;
+
+    /// @notice Precision of USTB
+    uint256 public immutable USTB_PRECISION;
 
     /// @notice The USTB contract
     IERC20 public immutable USTB;
@@ -88,8 +93,11 @@ contract Redemption {
         USTB = IERC20(_ustb);
         USDC = IERC20(_usdc);
 
-        USTB_DECIMALS = ERC20(_ustb).decimals();
-        USDC_DECIMALS = ERC20(_usdc).decimals();
+        USTB_DECIMALS = 6;
+        USDC_DECIMALS = 6;
+
+        USTB_PRECISION = 10 ** uint256(USTB_DECIMALS);
+        USDC_PRECISION = 10 ** uint256(USDC_DECIMALS);
     }
 
     receive() external payable {
@@ -145,8 +153,8 @@ contract Redemption {
     function maxUstbRedemptionAmount() external view returns (uint256 _ustbAmount) {
         (,, uint256 usdPerUstbChainlinkRaw) = _getChainlinkPrice();
         // divide a USDC amount by the USD per USTB Chainlink price then scale back up to a USTB amount
-        _ustbAmount = (USDC.balanceOf(address(this)) * CHAINLINK_FEED_PRECISION * USTB_DECIMALS)
-            / (usdPerUstbChainlinkRaw * USDC_DECIMALS);
+        _ustbAmount = (USDC.balanceOf(address(this)) * CHAINLINK_FEED_PRECISION * USTB_PRECISION)
+            / (usdPerUstbChainlinkRaw * USDC_PRECISION);
     }
 
     /// @notice The ```redeem``` function allows users to redeem USTB for USDC at the current oracle price
@@ -160,7 +168,7 @@ contract Redemption {
 
         // converts from a USTB amount to a USD amount, and then scales back up to a USDC amount
         uint256 usdcOutAmount =
-            (ustbInAmount * usdPerUstbChainlinkRaw * USDC_DECIMALS) / (CHAINLINK_FEED_PRECISION * USTB_DECIMALS);
+            (ustbInAmount * usdPerUstbChainlinkRaw * USDC_PRECISION) / (CHAINLINK_FEED_PRECISION * USTB_PRECISION);
 
         if (USDC.balanceOf(address(this)) < usdcOutAmount) revert InsufficientBalance();
 

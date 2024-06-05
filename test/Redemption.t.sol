@@ -18,7 +18,7 @@ contract RedemptionTest is Test {
     IERC20 constant USDC = IERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
     address constant _ustb_holder = 0xB8851D8fdd9a007A33f6b45BF602046644aBE81f;
 
-    uint256 constant usdc_amount = 10_000_000_000_000;
+    uint256 constant usdc_amount = 1e13;
     uint256 constant entity_id = 1;
 
     // TODO: currently _maximumOracleDelay is 28 hours in seconds, confirm with chainlink their write cadence which should always be 24 hours
@@ -97,6 +97,10 @@ contract RedemptionTest is Test {
         uint256 ustbBalance = USTB.balanceOf(_ustb_holder);
         uint256 ustbAmount = redemption.maxUstbRedemptionAmount();
 
+        // usdc balance * 1e6 (chainlink precision) * 1e6 (ustb precision) / feed price * 1e6 (usdc precision)
+        // 1e13 * 1e6 / 10192577
+        assertEq(ustbAmount, 981106152055);
+
         assertGe(ustbBalance, ustbAmount, "Don't redeem more than holder has");
 
         vm.startPrank(_ustb_holder);
@@ -106,6 +110,7 @@ contract RedemptionTest is Test {
         vm.expectEmit(true, true, true, true);
         emit IUSTB.Burn({burner: address(redemption), from: address(redemption), amount: ustbAmount});
         vm.expectEmit(true, true, true, true);
+        // ~1e13, the original USDC amount
         emit Redemption.Redeem({redeemer: _ustb_holder, ustbInAmount: ustbAmount, usdcOutAmount: 9999999999994});
         redemption.redeem(ustbAmount);
         vm.stopPrank();
@@ -144,7 +149,7 @@ contract RedemptionTest is Test {
     function testRedeemMinimumPrice() public {
         vm.warp(block.timestamp + 86_400);
 
-    (uint80 _roundId,,,,) = oracle.latestRoundData();
+        (uint80 _roundId,,,,) = oracle.latestRoundData();
         oracle.update({
             _roundId: _roundId + 1,
             _answer: 10_000_001,
@@ -214,5 +219,4 @@ contract RedemptionTest is Test {
     }
 
     // TODO: fuzz redeem test
-
 }
