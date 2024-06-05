@@ -19,7 +19,7 @@ contract RedemptionTest is Test {
     IERC20 constant USDC = IERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
     address constant USTB_HOLDER = 0xB8851D8fdd9a007A33f6b45BF602046644aBE81f;
 
-    uint256 constant USDC_AMOUNT = 10_000_000_000_000;
+    uint256 constant USDC_AMOUNT = 1e13;
     uint256 constant ENTITY_ID = 1;
 
     // TODO: currently _maximumOracleDelay is 28 hours in seconds, confirm with chainlink their write cadence which should always be 24 hours
@@ -101,6 +101,10 @@ contract RedemptionTest is Test {
         uint256 ustbBalance = USTB.balanceOf(USTB_HOLDER);
         uint256 ustbAmount = redemption.maxUstbRedemptionAmount();
 
+        // usdc balance * 1e6 (chainlink precision) * 1e6 (ustb precision) / feed price * 1e6 (usdc precision)
+        // 1e13 * 1e6 / 10192577
+        assertEq(ustbAmount, 981106152055);
+
         assertGe(ustbBalance, ustbAmount, "Don't redeem more than holder has");
 
         vm.startPrank(USTB_HOLDER);
@@ -110,6 +114,7 @@ contract RedemptionTest is Test {
         vm.expectEmit(true, true, true, true);
         emit IUSTB.Burn({burner: address(redemption), from: address(redemption), amount: ustbAmount});
         vm.expectEmit(true, true, true, true);
+        // ~1e13, the original USDC amount
         emit Redemption.Redeem({redeemer: USTB_HOLDER, ustbInAmount: ustbAmount, usdcOutAmount: 9999999999994});
         redemption.redeem(ustbAmount);
         vm.stopPrank();
