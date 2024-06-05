@@ -4,6 +4,7 @@ pragma solidity ^0.8.26;
 
 import {AggregatorV3Interface} from "chainlink/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+import {ERC20} from "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IUSTB} from "./IUSTB.sol";
 
@@ -13,6 +14,18 @@ import {IUSTB} from "./IUSTB.sol";
 contract Redemption {
     using SafeERC20 for IERC20;
 
+    /// @notice Decimals of USDC
+    uint256 public constant USDC_DECIMALS = 6;
+
+    /// @notice Precision of USDC
+    uint256 public constant USDC_PRECISION = 10 ** USDC_DECIMALS;
+
+    /// @notice Decimals of USTB
+    uint256 public constant USTB_DECIMALS = 6;
+
+    /// @notice Precision of USTB
+    uint256 public constant USTB_PRECISION = 10 ** USTB_DECIMALS;
+
     /// @notice Chainlink aggregator
     address public immutable CHAINLINK_FEED_ADDRESS;
 
@@ -21,18 +34,6 @@ contract Redemption {
 
     /// @notice Precision of USTB/USD chainlink feed
     uint256 public immutable CHAINLINK_FEED_PRECISION;
-
-    /// @notice Decimals of USDC
-    uint256 public immutable USDC_DECIMALS;
-
-    /// @notice Precision of USDC
-    uint256 public immutable USDC_PRECISION;
-
-    /// @notice Decimals of USTB
-    uint256 public immutable USTB_DECIMALS;
-
-    /// @notice Precision of USTB
-    uint256 public immutable USTB_PRECISION;
 
     /// @notice The USTB contract
     IERC20 public immutable USTB;
@@ -93,11 +94,8 @@ contract Redemption {
         USTB = IERC20(_ustb);
         USDC = IERC20(_usdc);
 
-        USTB_DECIMALS = 6;
-        USDC_DECIMALS = 6;
-
-        USTB_PRECISION = 10 ** uint256(USTB_DECIMALS);
-        USDC_PRECISION = 10 ** uint256(USDC_DECIMALS);
+        require(ERC20(_ustb).decimals() == USTB_DECIMALS);
+        require(ERC20(_usdc).decimals() == USDC_DECIMALS);
     }
 
     receive() external payable {
