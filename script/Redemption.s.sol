@@ -19,8 +19,7 @@ contract DeployRedemption is Script {
     address constant USTB_NAVS_ORACLE = address(0); // TODO
     address constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
 
-    // TODO: currently _maximumOracleDelay is 28 hours in seconds, confirm with chainlink their write cadence which should always be 24 hours
-    uint256 constant MAXIMUM_ORACLE_DELAY = 100_800;
+    uint256 constant MAXIMUM_ORACLE_DELAY = 93_600;
 
     address internal deployer;
     uint256 internal privateKey;

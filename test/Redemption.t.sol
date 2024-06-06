@@ -22,8 +22,7 @@ contract RedemptionTest is Test {
     uint256 constant USDC_AMOUNT = 1e13;
     uint256 constant ENTITY_ID = 1;
 
-    // TODO: currently _maximumOracleDelay is 28 hours in seconds, confirm with chainlink their write cadence which should always be 24 hours
-    uint256 constant MAXIMUM_ORACLE_DELAY = 100_800;
+    uint256 constant MAXIMUM_ORACLE_DELAY = 93_600;
 
     TestOracle public oracle;
     Redemption public redemption;
@@ -226,7 +225,7 @@ contract RedemptionTest is Test {
 
         hoax(admin);
         vm.expectEmit(true, true, true, true);
-        emit Redemption.SetMaximumOracleDelay({oldMaxOracleDelay: 100_800, newMaxOracleDelay: newDelay});
+        emit Redemption.SetMaximumOracleDelay({oldMaxOracleDelay: MAXIMUM_ORACLE_DELAY, newMaxOracleDelay: newDelay});
         redemption.setMaximumOracleDelay(newDelay);
 
         assertEq(newDelay, redemption.maximumOracleDelay());
