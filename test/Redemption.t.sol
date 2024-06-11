@@ -44,12 +44,12 @@ contract RedemptionTest is Test {
 
         vm.stopPrank();
 
-        deal(address(USDC), USTB_HOLDER, USDC_AMOUNT);
+        deal(address(USDC), admin, USDC_AMOUNT);
 
-        vm.startPrank(USTB_HOLDER);
+        vm.startPrank(admin);
         USDC.approve(address(redemption), USDC_AMOUNT);
         vm.expectEmit(true, true, true, true);
-        emit Redemption.Deposit({token: address(USDC), depositor: USTB_HOLDER, amount: USDC_AMOUNT});
+        emit Redemption.Deposit({token: address(USDC), depositor: admin, amount: USDC_AMOUNT});
         redemption.deposit(USDC_AMOUNT);
         vm.stopPrank();
 
@@ -57,8 +57,16 @@ contract RedemptionTest is Test {
         assertGt(COMPOUND.balanceOf(address(redemption)), 0);
     }
 
-    function testDepositBadArgs() public {
+    function testDepositUnauthorized() public {
         vm.startPrank(USTB_HOLDER);
+        USDC.approve(address(redemption), 0);
+        vm.expectRevert(Redemption.Unauthorized.selector);
+        redemption.deposit(0);
+        vm.stopPrank();
+    }
+
+    function testDepositBadArgs() public {
+        vm.startPrank(admin);
         USDC.approve(address(redemption), 0);
         vm.expectRevert(Redemption.BadArgs.selector);
         redemption.deposit(0);

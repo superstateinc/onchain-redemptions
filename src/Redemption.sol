@@ -218,6 +218,7 @@ contract Redemption {
     /// @notice The ```deposit``` function transfer USDC from the caller to this contract and then to Compound v3 to accrue interest
     /// @param usdcAmount amount of approved usdc to put into this contract / deposit in compound
     function deposit(uint256 usdcAmount) external {
+        _requireAuthorized();
         if (usdcAmount == 0) revert BadArgs();
 
         USDC.safeTransferFrom({from: msg.sender, to: address(this), value: usdcAmount});
