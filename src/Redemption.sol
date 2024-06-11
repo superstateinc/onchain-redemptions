@@ -216,6 +216,7 @@ contract Redemption {
     }
 
     /// @notice The ```deposit``` function transfer USDC from the caller to this contract and then to Compound v3 to accrue interest
+    /// @dev Requires msg.sender to be the admin address
     /// @param usdcAmount amount of approved usdc to put into this contract / deposit in compound
     function deposit(uint256 usdcAmount) external {
         _requireAuthorized();
