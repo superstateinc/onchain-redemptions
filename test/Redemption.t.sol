@@ -10,10 +10,6 @@ import {IUSTB} from "../src/IUSTB.sol";
 import {IComet} from "../src/IComet.sol";
 import {deployRedemption} from "../script/Redemption.s.sol";
 
-//TODO: rm
-import "forge-std/console.sol";
-
-
 contract RedemptionTest is Test {
     address public admin = address(this);
 
