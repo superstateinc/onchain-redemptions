@@ -184,8 +184,7 @@ contract Redemption {
         if (COMPOUND.balanceOf(address(this)) < usdcOutAmount) revert InsufficientBalance();
 
         USTB.safeTransferFrom({from: msg.sender, to: address(this), value: ustbInAmount});
-        COMPOUND.withdraw({asset: address(USDC), amount: usdcOutAmount});
-        USDC.safeTransfer({to: msg.sender, value: usdcOutAmount});
+        COMPOUND.withdrawTo({to: msg.sender, asset: address(USDC), amount: usdcOutAmount});
         IUSTB(address(USTB)).burn(ustbInAmount);
 
         emit Redeem({redeemer: msg.sender, ustbInAmount: ustbInAmount, usdcOutAmount: usdcOutAmount});
@@ -206,8 +205,7 @@ contract Redemption {
         if (balance < amount) revert InsufficientBalance();
 
         if (_token == address(COMPOUND)) {
-            COMPOUND.withdraw({asset: address(USDC), amount: amount});
-            USDC.safeTransfer({to: to, value: amount});
+            COMPOUND.withdrawTo({to: to, asset: address(USDC), amount: amount});
         } else {
             token.safeTransfer({to: to, value: amount});
         }
