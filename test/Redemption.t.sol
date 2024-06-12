@@ -7,6 +7,7 @@ import {AllowList} from "ustb/src/AllowList.sol";
 import {TestOracle} from "./TestOracle.sol";
 import {Redemption} from "../src/Redemption.sol";
 import {IUSTB} from "../src/IUSTB.sol";
+import {IComet} from "../src/IComet.sol";
 import {deployRedemption} from "../script/Redemption.s.sol";
 
 contract RedemptionTest is Test {
@@ -17,6 +18,7 @@ contract RedemptionTest is Test {
 
     IERC20 constant USTB = IERC20(0x43415eB6ff9DB7E26A15b704e7A3eDCe97d31C4e);
     IERC20 constant USDC = IERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
+    IComet constant COMPOUND = IComet(0xc3d688B66703497DAA19211EEdff47f25384cdc3);
     address constant USTB_HOLDER = 0xB8851D8fdd9a007A33f6b45BF602046644aBE81f;
 
     uint256 constant USDC_AMOUNT = 1e13;
@@ -34,21 +36,63 @@ contract RedemptionTest is Test {
         oracle = new TestOracle(1, 10_192_577, 1_716_994_000, 1_716_994_030, 1);
 
         (address payable _address,,) =
-            deployRedemption(admin, address(USTB), address(oracle), address(USDC), MAXIMUM_ORACLE_DELAY);
+            deployRedemption(admin, address(USTB), address(oracle), address(USDC), MAXIMUM_ORACLE_DELAY, address(COMPOUND));
         redemption = Redemption(_address);
-
-        // 10 million
-        deal(address(USDC), USTB_HOLDER, USDC_AMOUNT);
-
-        hoax(USTB_HOLDER);
-        USDC.transfer(address(redemption), USDC_AMOUNT);
-
-        assertGe(USDC.balanceOf(address(redemption)), 0);
 
         vm.startPrank(allowListAdmin);
         allowList.setEntityIdForAddress(ENTITY_ID, address(redemption));
 
         vm.stopPrank();
+
+        deal(address(USDC), admin, USDC_AMOUNT);
+
+        vm.startPrank(admin);
+        USDC.approve(address(redemption), USDC_AMOUNT);
+        vm.expectEmit(true, true, true, true);
+        emit Redemption.Deposit({token: address(USDC), depositor: admin, amount: USDC_AMOUNT});
+        redemption.deposit(USDC_AMOUNT);
+        vm.stopPrank();
+
+        assertEq(USDC.balanceOf(address(redemption)), 0);
+        assertGt(COMPOUND.balanceOf(address(redemption)), 0);
+    }
+
+    function testDepositUnauthorized() public {
+        vm.startPrank(USTB_HOLDER);
+        USDC.approve(address(redemption), 0);
+        vm.expectRevert(Redemption.Unauthorized.selector);
+        redemption.deposit(0);
+        vm.stopPrank();
+    }
+
+    function testDepositBadArgs() public {
+        vm.startPrank(admin);
+        USDC.approve(address(redemption), 0);
+        vm.expectRevert(Redemption.BadArgs.selector);
+        redemption.deposit(0);
+        vm.stopPrank();
+    }
+
+    function testInterestWithdraw() public {
+        uint256 initialBalance = COMPOUND.balanceOf(address(redemption));
+        uint256 ts = block.timestamp;
+
+        vm.roll(19_976_215 + 5_000);
+        vm.warp(ts + (5_000 * 12));
+
+        COMPOUND.accrueAccount(address(redemption));
+
+        uint256 interestBalance = COMPOUND.balanceOf(address(redemption));
+
+        assertGt(interestBalance, initialBalance, "Interest accrues over time");
+
+        hoax(admin);
+        vm.expectEmit(true, true, true, true);
+        emit Redemption.Withdraw({token: address(USDC), withdrawer: admin, to: admin, amount: interestBalance});
+        redemption.withdraw(address(COMPOUND), admin, interestBalance);
+
+        assertEq(0, USDC.balanceOf(address(redemption)), "No USDC in the redemption contract");
+        assertEq(interestBalance, USDC.balanceOf(admin), "USDC balance + interest went to admin");
     }
 
     function testSendEtherFail() public {
@@ -57,6 +101,17 @@ contract RedemptionTest is Test {
     }
 
     function testWithdraw() public {
+        hoax(admin);
+        vm.expectEmit(true, true, true, true);
+        emit Redemption.Withdraw({token: address(USDC), withdrawer: admin, to: admin, amount: USDC_AMOUNT - 1});
+        redemption.withdraw(address(COMPOUND), admin, USDC_AMOUNT - 1);
+
+        assertEq(USDC.balanceOf(admin), USDC_AMOUNT - 1);
+    }
+
+    function testWithdrawUsdc() public {
+        deal(address(USDC), address(redemption), USDC_AMOUNT);
+
         hoax(admin);
         vm.expectEmit(true, true, true, true);
         emit Redemption.Withdraw({token: address(USDC), withdrawer: admin, to: admin, amount: USDC_AMOUNT});
@@ -119,14 +174,16 @@ contract RedemptionTest is Test {
         vm.stopPrank();
 
         uint256 redeemerUsdcBalance = USDC.balanceOf(USTB_HOLDER);
-        uint256 redemptionContractUsdcBalance = USDC.balanceOf(address(redemption));
+        uint256 redemptionContractCusdcBalance = COMPOUND.balanceOf(address(redemption));
+        uint256 lostToRounding = 2;
 
         assertEq(USTB.balanceOf(USTB_HOLDER), ustbBalance - ustbAmount);
-        assertEq(USDC_AMOUNT - redemptionContractUsdcBalance, redeemerUsdcBalance);
+        assertEq(USDC_AMOUNT - redemptionContractCusdcBalance - lostToRounding, redeemerUsdcBalance);
 
         assertEq(USTB.balanceOf(address(redemption)), 0);
-        assertEq(redemptionContractUsdcBalance, 6);
-        assertEq(redemptionContractUsdcBalance, USDC_AMOUNT - redeemerUsdcBalance);
+
+        assertEq(redemptionContractCusdcBalance, 6 - lostToRounding);
+        assertEq(redemptionContractCusdcBalance, USDC_AMOUNT - redeemerUsdcBalance - lostToRounding);
     }
 
     function testRedeemFuzz(uint256 ustbRedeemAmount) public {
@@ -145,13 +202,15 @@ contract RedemptionTest is Test {
 
         uint256 redeemerUstbBalanceAfter = USTB.balanceOf(USTB_HOLDER);
         uint256 redeemerUsdcBalanceAfter = USDC.balanceOf(USTB_HOLDER);
-        uint256 redemptionContractUsdcBalanceAfter = USDC.balanceOf(address(redemption));
+        uint256 redemptionContractCusdcBalanceAfter = COMPOUND.balanceOf(address(redemption));
 
         assertEq(USTB.balanceOf(address(redemption)), 0, "Contract has 0 USTB balance");
 
         assertEq(redeemerUstbBalanceAfter, redeemerUstbBalanceBefore - ustbRedeemAmount, "Redeemer has proper USTB balance");
-        assertEq(redeemerUsdcBalanceAfter, USDC_AMOUNT - redemptionContractUsdcBalanceAfter, "Redeemer has proper USDC balance");
-        assertEq(redemptionContractUsdcBalanceAfter, USDC_AMOUNT - redeemerUsdcBalanceAfter, "Contract has proper USDC balance");
+
+        // lose 0-3 because of rounding on compound side
+        assertApproxEqAbs(redeemerUsdcBalanceAfter, USDC_AMOUNT - redemptionContractCusdcBalanceAfter, 3, "Redeemer has proper USDC balance");
+        assertApproxEqAbs(redemptionContractCusdcBalanceAfter, USDC_AMOUNT - redeemerUsdcBalanceAfter, 3, "Contract has proper USDC balance");
     }
 
     function testRedeemBadDataLowPriceFail() public {
@@ -181,7 +240,7 @@ contract RedemptionTest is Test {
         (uint80 _roundId,,,,) = oracle.latestRoundData();
         oracle.update({
             _roundId: _roundId + 1,
-            _answer: 10_000_001,
+            _answer: 7_000_001,
             _startedAt: block.timestamp,
             _updatedAt: block.timestamp,
             _answeredInRound: _roundId + 1
