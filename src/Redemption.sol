@@ -192,6 +192,7 @@ contract Redemption {
 
     /// @notice The ```withdraw``` function allows the admin to withdraw any type of ERC20
     /// @dev Requires msg.sender to be the admin address
+    /// @dev If you specify the compound (cUSDC) address, you'll withdraw from compound and receive USDC, every other token works as expected.
     /// @param _token The address of the token to withdraw
     /// @param to The address where the tokens are going
     /// @param amount The amount of `_token` to withdraw
@@ -206,11 +207,11 @@ contract Redemption {
 
         if (_token == address(COMPOUND)) {
             COMPOUND.withdrawTo({to: to, asset: address(USDC), amount: amount});
+            emit Withdraw({token: address(USDC), withdrawer: msg.sender, to: to, amount: amount});
         } else {
             token.safeTransfer({to: to, value: amount});
+            emit Withdraw({token: _token, withdrawer: msg.sender, to: to, amount: amount});
         }
-
-        emit Withdraw({token: _token, withdrawer: msg.sender, to: to, amount: amount});
     }
 
     /// @notice The ```deposit``` function transfer USDC from the caller to this contract and then to Compound v3 to accrue interest

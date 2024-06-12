@@ -88,7 +88,7 @@ contract RedemptionTest is Test {
 
         hoax(admin);
         vm.expectEmit(true, true, true, true);
-        emit Redemption.Withdraw({token: address(COMPOUND), withdrawer: admin, to: admin, amount: interestBalance});
+        emit Redemption.Withdraw({token: address(USDC), withdrawer: admin, to: admin, amount: interestBalance});
         redemption.withdraw(address(COMPOUND), admin, interestBalance);
 
         assertEq(0, USDC.balanceOf(address(redemption)), "No USDC in the redemption contract");
@@ -103,7 +103,7 @@ contract RedemptionTest is Test {
     function testWithdraw() public {
         hoax(admin);
         vm.expectEmit(true, true, true, true);
-        emit Redemption.Withdraw({token: address(COMPOUND), withdrawer: admin, to: admin, amount: USDC_AMOUNT - 1});
+        emit Redemption.Withdraw({token: address(USDC), withdrawer: admin, to: admin, amount: USDC_AMOUNT - 1});
         redemption.withdraw(address(COMPOUND), admin, USDC_AMOUNT - 1);
 
         assertEq(USDC.balanceOf(admin), USDC_AMOUNT - 1);
