@@ -36,6 +36,9 @@ contract Redemption {
     /// @notice Precision of USTB/USD chainlink feed
     uint256 public immutable CHAINLINK_FEED_PRECISION;
 
+    /// @notice Precision of USTB/USD chainlink feed
+    uint256 public immutable MINIMUM_ACCEPTABLE_PRICE;
+
     /// @notice The USTB contract
     IERC20 public immutable USTB;
 
@@ -98,6 +101,9 @@ contract Redemption {
         CHAINLINK_FEED_ADDRESS = _ustbChainlinkFeedAddress;
         CHAINLINK_FEED_DECIMALS = AggregatorV3Interface(CHAINLINK_FEED_ADDRESS).decimals();
         CHAINLINK_FEED_PRECISION = 10 ** uint256(CHAINLINK_FEED_DECIMALS);
+        // USTB starts at $10.000000, Chainlink oracle with 8 decimals would represent as 1_000_000_000.
+        // This math will give us 700_000_000 or $7.000000.
+        MINIMUM_ACCEPTABLE_PRICE = 7 * (10 ** uint256(CHAINLINK_FEED_DECIMALS));
 
         maximumOracleDelay = _maximumOracleDelay;
 
@@ -143,9 +149,9 @@ contract Redemption {
             AggregatorV3Interface(CHAINLINK_FEED_ADDRESS).latestRoundData();
 
         // If data is stale or below first price, set bad data to true and return
-        // 10_000_000 is $10.000000 in the oracle format, that was our starting NAV per Share price for USTB
+        // 1_000_000_000 is $10.000000 in the oracle format, that was our starting NAV per Share price for USTB
         // The oracle should never return a price much lower than this
-        _isBadData = _answer <= 7_000_000 || ((block.timestamp - _chainlinkUpdatedAt) > maximumOracleDelay);
+        _isBadData = _answer <= int256(MINIMUM_ACCEPTABLE_PRICE) || ((block.timestamp - _chainlinkUpdatedAt) > maximumOracleDelay);
         _updatedAt = _chainlinkUpdatedAt;
         _price = uint256(_answer);
     }
