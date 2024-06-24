@@ -36,7 +36,7 @@ contract Redemption {
     /// @notice Precision of USTB/USD chainlink feed
     uint256 public immutable CHAINLINK_FEED_PRECISION;
 
-    /// @notice Precision of USTB/USD chainlink feed
+    /// @notice Lowest acceptable chainlink oracle price
     uint256 public immutable MINIMUM_ACCEPTABLE_PRICE;
 
     /// @notice The USTB contract
