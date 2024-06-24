@@ -5,6 +5,7 @@ pragma solidity ^0.8.26;
 import {AggregatorV3Interface} from "chainlink/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {ERC20} from "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
+import {Pausable} from "openzeppelin-contracts/contracts/utils/Pausable.sol";
 import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IUSTB} from "./IUSTB.sol";
 import {IComet} from "./IComet.sol";
@@ -12,7 +13,7 @@ import {IComet} from "./IComet.sol";
 /// @title Redemption
 /// @author Jon Walch and Max Wolff (Superstate) https://github.com/superstateinc
 /// @notice A contract that allows USTB holders to redeem their USTB for USDC
-contract Redemption {
+contract Redemption is Pausable {
     using SafeERC20 for IERC20;
 
     /// @notice Decimals of USDC
@@ -128,7 +129,26 @@ contract Redemption {
         if (msg.sender != ADMIN) revert Unauthorized();
     }
 
-    // Oracle integration borrowed from: https://github.com/FraxFinance/frax-oracles/blob/bd56532a3c33da95faed904a5810313deab5f13c/src/abstracts/ChainlinkOracleWithMaxDelay.sol
+
+    /// @notice Invokes the {Pausable-_pause} internal function
+    /// @dev Can only be called by the admin
+    function pause() external {
+        _requireAuthorized();
+        _requireNotPaused();
+
+        _pause();
+    }
+
+     /// @notice Invokes the {Pausable-_unpause} internal function
+     /// @dev Can only be called by the admin
+    function unpause() external {
+        _requireAuthorized();
+        _requirePaused();
+
+        _unpause();
+    }
+
+    // Oracle integration inspired by: https://github.com/FraxFinance/frax-oracles/blob/bd56532a3c33da95faed904a5810313deab5f13c/src/abstracts/ChainlinkOracleWithMaxDelay.sol
 
     function _setMaximumOracleDelay(uint256 _newMaxOracleDelay) internal {
         if (maximumOracleDelay == _newMaxOracleDelay) revert BadArgs();
@@ -179,6 +199,7 @@ contract Redemption {
     /// @param ustbInAmount The amount of USTB to redeem
     function redeem(uint256 ustbInAmount) external {
         if (ustbInAmount == 0) revert BadArgs();
+        _requireNotPaused();
 
         (bool isBadData,, uint256 usdPerUstbChainlinkRaw) = _getChainlinkPrice();
         if (isBadData) revert BadChainlinkData();

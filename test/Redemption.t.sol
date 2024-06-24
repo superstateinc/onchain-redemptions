@@ -3,6 +3,7 @@ pragma solidity ^0.8.26;
 
 import {Test, console} from "forge-std/Test.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+import {Pausable} from "openzeppelin-contracts/contracts/utils/Pausable.sol";
 import {AllowList} from "ustb/src/AllowList.sol";
 import {TestOracle} from "./TestOracle.sol";
 import {Redemption} from "../src/Redemption.sol";
@@ -161,6 +162,11 @@ contract RedemptionTest is Test {
 
         assertGe(ustbBalance, ustbAmount, "Don't redeem more than holder has");
 
+        vm.startPrank(admin);
+        redemption.pause();
+        redemption.unpause();
+        vm.stopPrank();
+
         vm.startPrank(USTB_HOLDER);
         USTB.approve(address(redemption), ustbAmount);
         vm.expectEmit(true, true, true, true);
@@ -304,6 +310,30 @@ contract RedemptionTest is Test {
         hoax(admin);
         vm.expectRevert(Redemption.BadArgs.selector);
         redemption.setMaximumOracleDelay(oldDelay);
+    }
+
+    function testCantRedeemPaused() public {
+        hoax(admin);
+        redemption.pause();
+
+        hoax(USTB_HOLDER);
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        redemption.redeem(1);
+    }
+
+    function testCantPauseAlreadyPaused() public {
+        hoax(admin);
+        redemption.pause();
+
+        hoax(admin);
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        redemption.pause();
+    }
+
+    function testCantUnpauseAlreadyUnpaused() public {
+        hoax(admin);
+        vm.expectRevert(Pausable.ExpectedPause.selector);
+        redemption.unpause();
     }
 
 }
