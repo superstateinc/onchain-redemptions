@@ -5,6 +5,7 @@ pragma solidity ^0.8.26;
 import {AggregatorV3Interface} from "chainlink/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {ERC20} from "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
+import {Pausable} from "openzeppelin-contracts/contracts/utils/Pausable.sol";
 import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IUSTB} from "./IUSTB.sol";
 import {IComet} from "./IComet.sol";
@@ -12,7 +13,7 @@ import {IComet} from "./IComet.sol";
 /// @title Redemption
 /// @author Jon Walch and Max Wolff (Superstate) https://github.com/superstateinc
 /// @notice A contract that allows USTB holders to redeem their USTB for USDC
-contract Redemption {
+contract Redemption is Pausable {
     using SafeERC20 for IERC20;
 
     /// @notice Decimals of USDC
@@ -35,6 +36,9 @@ contract Redemption {
 
     /// @notice Precision of USTB/USD chainlink feed
     uint256 public immutable CHAINLINK_FEED_PRECISION;
+
+    /// @notice Lowest acceptable chainlink oracle price
+    uint256 public immutable MINIMUM_ACCEPTABLE_PRICE;
 
     /// @notice The USTB contract
     IERC20 public immutable USTB;
@@ -98,6 +102,9 @@ contract Redemption {
         CHAINLINK_FEED_ADDRESS = _ustbChainlinkFeedAddress;
         CHAINLINK_FEED_DECIMALS = AggregatorV3Interface(CHAINLINK_FEED_ADDRESS).decimals();
         CHAINLINK_FEED_PRECISION = 10 ** uint256(CHAINLINK_FEED_DECIMALS);
+        // USTB starts at $10.000000, Chainlink oracle with 8 decimals would represent as 1_000_000_000.
+        // This math will give us 700_000_000 or $7.000000.
+        MINIMUM_ACCEPTABLE_PRICE = 7 * (10 ** uint256(CHAINLINK_FEED_DECIMALS));
 
         maximumOracleDelay = _maximumOracleDelay;
 
@@ -122,7 +129,25 @@ contract Redemption {
         if (msg.sender != ADMIN) revert Unauthorized();
     }
 
-    // Oracle integration borrowed from: https://github.com/FraxFinance/frax-oracles/blob/bd56532a3c33da95faed904a5810313deab5f13c/src/abstracts/ChainlinkOracleWithMaxDelay.sol
+    /// @notice Invokes the {Pausable-_pause} internal function
+    /// @dev Can only be called by the admin
+    function pause() external {
+        _requireAuthorized();
+        _requireNotPaused();
+
+        _pause();
+    }
+
+    /// @notice Invokes the {Pausable-_unpause} internal function
+    /// @dev Can only be called by the admin
+    function unpause() external {
+        _requireAuthorized();
+        _requirePaused();
+
+        _unpause();
+    }
+
+    // Oracle integration inspired by: https://github.com/FraxFinance/frax-oracles/blob/bd56532a3c33da95faed904a5810313deab5f13c/src/abstracts/ChainlinkOracleWithMaxDelay.sol
 
     function _setMaximumOracleDelay(uint256 _newMaxOracleDelay) internal {
         if (maximumOracleDelay == _newMaxOracleDelay) revert BadArgs();
@@ -143,9 +168,10 @@ contract Redemption {
             AggregatorV3Interface(CHAINLINK_FEED_ADDRESS).latestRoundData();
 
         // If data is stale or below first price, set bad data to true and return
-        // 10_000_000 is $10.000000 in the oracle format, that was our starting NAV per Share price for USTB
+        // 1_000_000_000 is $10.000000 in the oracle format, that was our starting NAV per Share price for USTB
         // The oracle should never return a price much lower than this
-        _isBadData = _answer <= 7_000_000 || ((block.timestamp - _chainlinkUpdatedAt) > maximumOracleDelay);
+        _isBadData = _answer < int256(MINIMUM_ACCEPTABLE_PRICE)
+            || ((block.timestamp - _chainlinkUpdatedAt) > maximumOracleDelay);
         _updatedAt = _chainlinkUpdatedAt;
         _price = uint256(_answer);
     }
@@ -173,6 +199,7 @@ contract Redemption {
     /// @param ustbInAmount The amount of USTB to redeem
     function redeem(uint256 ustbInAmount) external {
         if (ustbInAmount == 0) revert BadArgs();
+        _requireNotPaused();
 
         (bool isBadData,, uint256 usdPerUstbChainlinkRaw) = _getChainlinkPrice();
         if (isBadData) revert BadChainlinkData();
@@ -193,6 +220,7 @@ contract Redemption {
     /// @notice The ```withdraw``` function allows the admin to withdraw any type of ERC20
     /// @dev Requires msg.sender to be the admin address
     /// @dev If you specify the compound (cUSDC) address, you'll withdraw from compound and receive USDC, every other token works as expected.
+    /// @dev Allows type(uint256).max withdraw from Compound when COMPOUND is the _token argument
     /// @param _token The address of the token to withdraw
     /// @param to The address where the tokens are going
     /// @param amount The amount of `_token` to withdraw
@@ -203,12 +231,12 @@ contract Redemption {
         IERC20 token = IERC20(_token);
         uint256 balance = token.balanceOf(address(this));
 
-        if (balance < amount) revert InsufficientBalance();
-
         if (_token == address(COMPOUND)) {
             COMPOUND.withdrawTo({to: to, asset: address(USDC), amount: amount});
             emit Withdraw({token: address(USDC), withdrawer: msg.sender, to: to, amount: amount});
         } else {
+            if (balance < amount) revert InsufficientBalance();
+
             token.safeTransfer({to: to, value: amount});
             emit Withdraw({token: _token, withdrawer: msg.sender, to: to, amount: amount});
         }

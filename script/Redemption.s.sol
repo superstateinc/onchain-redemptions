@@ -4,9 +4,14 @@ pragma solidity ^0.8.26;
 import {Script, console} from "forge-std/Script.sol";
 import {Redemption} from "../src/Redemption.sol";
 
-function deployRedemption(address admin, address ustb, address oracle, address usdc, uint256 maximumOracleDelay, address compound)
-    returns (address payable _address, bytes memory _constructorParams, string memory _contractName)
-{
+function deployRedemption(
+    address admin,
+    address ustb,
+    address oracle,
+    address usdc,
+    uint256 maximumOracleDelay,
+    address compound
+) returns (address payable _address, bytes memory _constructorParams, string memory _contractName) {
     _constructorParams = abi.encode(admin, ustb, oracle, usdc, maximumOracleDelay, compound);
     _contractName = "";
     _address = payable(address(new Redemption(admin, ustb, oracle, usdc, maximumOracleDelay, compound)));

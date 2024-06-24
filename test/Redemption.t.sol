@@ -3,6 +3,7 @@ pragma solidity ^0.8.26;
 
 import {Test, console} from "forge-std/Test.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+import {Pausable} from "openzeppelin-contracts/contracts/utils/Pausable.sol";
 import {AllowList} from "ustb/src/AllowList.sol";
 import {TestOracle} from "./TestOracle.sol";
 import {Redemption} from "../src/Redemption.sol";
@@ -33,10 +34,11 @@ contract RedemptionTest is Test {
         vm.createSelectFork(vm.envString("ETH_RPC_URL"), 19_976_215);
 
         // roundId, answer, startedAt, updatedAt, answeredInRound
-        oracle = new TestOracle(1, 10_192_577, 1_716_994_000, 1_716_994_030, 1);
+        oracle = new TestOracle(1, 1_019_257_700, 1_716_994_000, 1_716_994_030, 1);
 
-        (address payable _address,,) =
-            deployRedemption(admin, address(USTB), address(oracle), address(USDC), MAXIMUM_ORACLE_DELAY, address(COMPOUND));
+        (address payable _address,,) = deployRedemption(
+            admin, address(USTB), address(oracle), address(USDC), MAXIMUM_ORACLE_DELAY, address(COMPOUND)
+        );
         redemption = Redemption(_address);
 
         vm.startPrank(allowListAdmin);
@@ -161,6 +163,11 @@ contract RedemptionTest is Test {
 
         assertGe(ustbBalance, ustbAmount, "Don't redeem more than holder has");
 
+        vm.startPrank(admin);
+        redemption.pause();
+        redemption.unpause();
+        vm.stopPrank();
+
         vm.startPrank(USTB_HOLDER);
         USTB.approve(address(redemption), ustbAmount);
         vm.expectEmit(true, true, true, true);
@@ -206,18 +213,30 @@ contract RedemptionTest is Test {
 
         assertEq(USTB.balanceOf(address(redemption)), 0, "Contract has 0 USTB balance");
 
-        assertEq(redeemerUstbBalanceAfter, redeemerUstbBalanceBefore - ustbRedeemAmount, "Redeemer has proper USTB balance");
+        assertEq(
+            redeemerUstbBalanceAfter, redeemerUstbBalanceBefore - ustbRedeemAmount, "Redeemer has proper USTB balance"
+        );
 
         // lose 0-3 because of rounding on compound side
-        assertApproxEqAbs(redeemerUsdcBalanceAfter, USDC_AMOUNT - redemptionContractCusdcBalanceAfter, 3, "Redeemer has proper USDC balance");
-        assertApproxEqAbs(redemptionContractCusdcBalanceAfter, USDC_AMOUNT - redeemerUsdcBalanceAfter, 3, "Contract has proper USDC balance");
+        assertApproxEqAbs(
+            redeemerUsdcBalanceAfter,
+            USDC_AMOUNT - redemptionContractCusdcBalanceAfter,
+            3,
+            "Redeemer has proper USDC balance"
+        );
+        assertApproxEqAbs(
+            redemptionContractCusdcBalanceAfter,
+            USDC_AMOUNT - redeemerUsdcBalanceAfter,
+            3,
+            "Contract has proper USDC balance"
+        );
     }
 
     function testRedeemBadDataLowPriceFail() public {
         (uint80 _roundId,, uint256 _startedAt, uint256 _updatedAt,) = oracle.latestRoundData();
         oracle.update({
             _roundId: _roundId + 1,
-            _answer: 7_000_000,
+            _answer: 699_999_999,
             _startedAt: _startedAt + 86_400,
             _updatedAt: _updatedAt + 86_400,
             _answeredInRound: _roundId + 1
@@ -240,7 +259,7 @@ contract RedemptionTest is Test {
         (uint80 _roundId,,,,) = oracle.latestRoundData();
         oracle.update({
             _roundId: _roundId + 1,
-            _answer: 7_000_001,
+            _answer: 700_000_000,
             _startedAt: block.timestamp,
             _updatedAt: block.timestamp,
             _answeredInRound: _roundId + 1
@@ -306,4 +325,27 @@ contract RedemptionTest is Test {
         redemption.setMaximumOracleDelay(oldDelay);
     }
 
+    function testCantRedeemPaused() public {
+        hoax(admin);
+        redemption.pause();
+
+        hoax(USTB_HOLDER);
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        redemption.redeem(1);
+    }
+
+    function testCantPauseAlreadyPaused() public {
+        hoax(admin);
+        redemption.pause();
+
+        hoax(admin);
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        redemption.pause();
+    }
+
+    function testCantUnpauseAlreadyUnpaused() public {
+        hoax(admin);
+        vm.expectRevert(Pausable.ExpectedPause.selector);
+        redemption.unpause();
+    }
 }
