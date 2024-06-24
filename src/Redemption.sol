@@ -129,7 +129,6 @@ contract Redemption is Pausable {
         if (msg.sender != ADMIN) revert Unauthorized();
     }
 
-
     /// @notice Invokes the {Pausable-_pause} internal function
     /// @dev Can only be called by the admin
     function pause() external {
@@ -139,8 +138,8 @@ contract Redemption is Pausable {
         _pause();
     }
 
-     /// @notice Invokes the {Pausable-_unpause} internal function
-     /// @dev Can only be called by the admin
+    /// @notice Invokes the {Pausable-_unpause} internal function
+    /// @dev Can only be called by the admin
     function unpause() external {
         _requireAuthorized();
         _requirePaused();
@@ -166,12 +165,13 @@ contract Redemption is Pausable {
 
     function _getChainlinkPrice() internal view returns (bool _isBadData, uint256 _updatedAt, uint256 _price) {
         (, int256 _answer,, uint256 _chainlinkUpdatedAt,) =
-                                AggregatorV3Interface(CHAINLINK_FEED_ADDRESS).latestRoundData();
+            AggregatorV3Interface(CHAINLINK_FEED_ADDRESS).latestRoundData();
 
         // If data is stale or below first price, set bad data to true and return
         // 1_000_000_000 is $10.000000 in the oracle format, that was our starting NAV per Share price for USTB
         // The oracle should never return a price much lower than this
-        _isBadData = _answer <= int256(MINIMUM_ACCEPTABLE_PRICE) || ((block.timestamp - _chainlinkUpdatedAt) > maximumOracleDelay);
+        _isBadData = _answer <= int256(MINIMUM_ACCEPTABLE_PRICE)
+            || ((block.timestamp - _chainlinkUpdatedAt) > maximumOracleDelay);
         _updatedAt = _chainlinkUpdatedAt;
         _price = uint256(_answer);
     }

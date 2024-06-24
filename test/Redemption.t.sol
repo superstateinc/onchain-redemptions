@@ -36,8 +36,9 @@ contract RedemptionTest is Test {
         // roundId, answer, startedAt, updatedAt, answeredInRound
         oracle = new TestOracle(1, 1_019_257_700, 1_716_994_000, 1_716_994_030, 1);
 
-        (address payable _address,,) =
-                        deployRedemption(admin, address(USTB), address(oracle), address(USDC), MAXIMUM_ORACLE_DELAY, address(COMPOUND));
+        (address payable _address,,) = deployRedemption(
+            admin, address(USTB), address(oracle), address(USDC), MAXIMUM_ORACLE_DELAY, address(COMPOUND)
+        );
         redemption = Redemption(_address);
 
         vm.startPrank(allowListAdmin);
@@ -212,11 +213,23 @@ contract RedemptionTest is Test {
 
         assertEq(USTB.balanceOf(address(redemption)), 0, "Contract has 0 USTB balance");
 
-        assertEq(redeemerUstbBalanceAfter, redeemerUstbBalanceBefore - ustbRedeemAmount, "Redeemer has proper USTB balance");
+        assertEq(
+            redeemerUstbBalanceAfter, redeemerUstbBalanceBefore - ustbRedeemAmount, "Redeemer has proper USTB balance"
+        );
 
         // lose 0-3 because of rounding on compound side
-        assertApproxEqAbs(redeemerUsdcBalanceAfter, USDC_AMOUNT - redemptionContractCusdcBalanceAfter, 3, "Redeemer has proper USDC balance");
-        assertApproxEqAbs(redemptionContractCusdcBalanceAfter, USDC_AMOUNT - redeemerUsdcBalanceAfter, 3, "Contract has proper USDC balance");
+        assertApproxEqAbs(
+            redeemerUsdcBalanceAfter,
+            USDC_AMOUNT - redemptionContractCusdcBalanceAfter,
+            3,
+            "Redeemer has proper USDC balance"
+        );
+        assertApproxEqAbs(
+            redemptionContractCusdcBalanceAfter,
+            USDC_AMOUNT - redeemerUsdcBalanceAfter,
+            3,
+            "Contract has proper USDC balance"
+        );
     }
 
     function testRedeemBadDataLowPriceFail() public {
@@ -335,5 +348,4 @@ contract RedemptionTest is Test {
         vm.expectRevert(Pausable.ExpectedPause.selector);
         redemption.unpause();
     }
-
 }
