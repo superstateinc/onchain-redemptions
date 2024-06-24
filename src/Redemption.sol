@@ -199,6 +199,7 @@ contract Redemption {
     /// @notice The ```withdraw``` function allows the admin to withdraw any type of ERC20
     /// @dev Requires msg.sender to be the admin address
     /// @dev If you specify the compound (cUSDC) address, you'll withdraw from compound and receive USDC, every other token works as expected.
+    /// @dev Allows type(uint256).max withdraw from Compound when COMPOUND is the _token argument
     /// @param _token The address of the token to withdraw
     /// @param to The address where the tokens are going
     /// @param amount The amount of `_token` to withdraw
@@ -209,12 +210,12 @@ contract Redemption {
         IERC20 token = IERC20(_token);
         uint256 balance = token.balanceOf(address(this));
 
-        if (balance < amount) revert InsufficientBalance();
-
         if (_token == address(COMPOUND)) {
             COMPOUND.withdrawTo({to: to, asset: address(USDC), amount: amount});
             emit Withdraw({token: address(USDC), withdrawer: msg.sender, to: to, amount: amount});
         } else {
+            if (balance < amount) revert InsufficientBalance();
+
             token.safeTransfer({to: to, value: amount});
             emit Withdraw({token: _token, withdrawer: msg.sender, to: to, amount: amount});
         }
