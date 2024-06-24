@@ -236,7 +236,7 @@ contract RedemptionTest is Test {
         (uint80 _roundId,, uint256 _startedAt, uint256 _updatedAt,) = oracle.latestRoundData();
         oracle.update({
             _roundId: _roundId + 1,
-            _answer: 700_000_000,
+            _answer: 699_999_999,
             _startedAt: _startedAt + 86_400,
             _updatedAt: _updatedAt + 86_400,
             _answeredInRound: _roundId + 1
@@ -259,7 +259,7 @@ contract RedemptionTest is Test {
         (uint80 _roundId,,,,) = oracle.latestRoundData();
         oracle.update({
             _roundId: _roundId + 1,
-            _answer: 700_000_001,
+            _answer: 700_000_000,
             _startedAt: block.timestamp,
             _updatedAt: block.timestamp,
             _answeredInRound: _roundId + 1

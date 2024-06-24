@@ -170,7 +170,7 @@ contract Redemption is Pausable {
         // If data is stale or below first price, set bad data to true and return
         // 1_000_000_000 is $10.000000 in the oracle format, that was our starting NAV per Share price for USTB
         // The oracle should never return a price much lower than this
-        _isBadData = _answer <= int256(MINIMUM_ACCEPTABLE_PRICE)
+        _isBadData = _answer < int256(MINIMUM_ACCEPTABLE_PRICE)
             || ((block.timestamp - _chainlinkUpdatedAt) > maximumOracleDelay);
         _updatedAt = _chainlinkUpdatedAt;
         _price = uint256(_answer);
