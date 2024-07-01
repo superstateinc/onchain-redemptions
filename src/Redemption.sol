@@ -232,8 +232,16 @@ contract Redemption is Pausable {
         uint256 balance = token.balanceOf(address(this));
 
         if (_token == address(COMPOUND)) {
-            COMPOUND.withdrawTo({to: to, asset: address(USDC), amount: amount});
-            emit Withdraw({token: address(USDC), withdrawer: msg.sender, to: to, amount: amount});
+            if (amount ==  type(uint256).max) {
+                uint256 compoundBalance = COMPOUND.balanceOf(address(this));
+                COMPOUND.withdrawTo({to: to, asset: address(USDC), amount: amount});
+                // type(uint256).max supplied as amount to `withdrawTo` means withdraw all. We need to get the balance first,
+                // otherwise the amount argument to the Withdraw event would be type(uint256).max instead of the actual amount
+                emit Withdraw({token: address(USDC), withdrawer: msg.sender, to: to, amount: compoundBalance});
+            } else {
+                COMPOUND.withdrawTo({to: to, asset: address(USDC), amount: amount});
+                emit Withdraw({token: address(USDC), withdrawer: msg.sender, to: to, amount: amount});
+            }
         } else {
             if (balance < amount) revert InsufficientBalance();
 
