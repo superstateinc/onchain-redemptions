@@ -170,8 +170,8 @@ contract Redemption is Pausable {
         // If data is stale or below first price, set bad data to true and return
         // 1_000_000_000 is $10.000000 in the oracle format, that was our starting NAV per Share price for USTB
         // The oracle should never return a price much lower than this
-        _isBadData = _answer < int256(MINIMUM_ACCEPTABLE_PRICE)
-            || ((block.timestamp - _chainlinkUpdatedAt) > maximumOracleDelay);
+        _isBadData =
+            _answer < int256(MINIMUM_ACCEPTABLE_PRICE) || ((block.timestamp - _chainlinkUpdatedAt) > maximumOracleDelay);
         _updatedAt = _chainlinkUpdatedAt;
         _price = uint256(_answer);
     }
@@ -232,7 +232,7 @@ contract Redemption is Pausable {
         uint256 balance = token.balanceOf(address(this));
 
         if (_token == address(COMPOUND)) {
-            if (amount ==  type(uint256).max) {
+            if (amount == type(uint256).max) {
                 uint256 compoundBalance = COMPOUND.balanceOf(address(this));
                 COMPOUND.withdrawTo({to: to, asset: address(USDC), amount: amount});
                 // type(uint256).max supplied as amount to `withdrawTo` means withdraw all. We need to get the balance first,
