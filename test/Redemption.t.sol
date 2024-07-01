@@ -97,6 +97,28 @@ contract RedemptionTest is Test {
         assertEq(interestBalance, USDC.balanceOf(admin), "USDC balance + interest went to admin");
     }
 
+    function testMaxAmountWithdraw() public {
+        uint256 initialBalance = COMPOUND.balanceOf(address(redemption));
+        uint256 ts = block.timestamp;
+
+        vm.roll(19_976_215 + 5_000);
+        vm.warp(ts + (5_000 * 12));
+
+        COMPOUND.accrueAccount(address(redemption));
+
+        uint256 interestBalance = COMPOUND.balanceOf(address(redemption));
+
+        assertGt(interestBalance, initialBalance, "Interest accrues over time");
+
+        hoax(admin);
+        vm.expectEmit(true, true, true, true);
+        emit Redemption.Withdraw({token: address(USDC), withdrawer: admin, to: admin, amount: interestBalance});
+        redemption.withdraw(address(COMPOUND), admin, type(uint256).max);
+
+        assertEq(0, USDC.balanceOf(address(redemption)), "No USDC in the redemption contract");
+        assertEq(interestBalance, USDC.balanceOf(admin), "USDC balance + interest went to admin");
+    }
+
     function testSendEtherFail() public {
         (bool success,) = address(redemption).call{value: 1}("");
         assertFalse(success);
