@@ -102,8 +102,8 @@ contract Redemption is Pausable {
         CHAINLINK_FEED_ADDRESS = _ustbChainlinkFeedAddress;
         CHAINLINK_FEED_DECIMALS = AggregatorV3Interface(CHAINLINK_FEED_ADDRESS).decimals();
         CHAINLINK_FEED_PRECISION = 10 ** uint256(CHAINLINK_FEED_DECIMALS);
-        // USTB starts at $10.000000, Chainlink oracle with 8 decimals would represent as 1_000_000_000.
-        // This math will give us 700_000_000 or $7.000000.
+        // USTB starts at $10.000000, Chainlink oracle with 6 decimals would represent as 10_000_000.
+        // This math will give us 7_000_000 or $7.000000.
         MINIMUM_ACCEPTABLE_PRICE = 7 * (10 ** uint256(CHAINLINK_FEED_DECIMALS));
 
         maximumOracleDelay = _maximumOracleDelay;

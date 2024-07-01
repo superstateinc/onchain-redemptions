@@ -29,7 +29,7 @@ contract TestOracle {
     }
 
     function decimals() external pure returns (uint8) {
-        return 8;
+        return 6;
     }
 
     function description() external pure returns (string memory) {

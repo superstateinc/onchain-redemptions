@@ -34,7 +34,7 @@ contract RedemptionTest is Test {
         vm.createSelectFork(vm.envString("ETH_RPC_URL"), 19_976_215);
 
         // roundId, answer, startedAt, updatedAt, answeredInRound
-        oracle = new TestOracle(1, 1_019_257_700, 1_716_994_000, 1_716_994_030, 1);
+        oracle = new TestOracle(1, 10_192_577, 1_716_994_000, 1_716_994_030, 1);
 
         (address payable _address,,) = deployRedemption(
             admin, address(USTB), address(oracle), address(USDC), MAXIMUM_ORACLE_DELAY, address(COMPOUND)
@@ -258,7 +258,7 @@ contract RedemptionTest is Test {
         (uint80 _roundId,, uint256 _startedAt, uint256 _updatedAt,) = oracle.latestRoundData();
         oracle.update({
             _roundId: _roundId + 1,
-            _answer: 699_999_999,
+            _answer: 6_999_999,
             _startedAt: _startedAt + 86_400,
             _updatedAt: _updatedAt + 86_400,
             _answeredInRound: _roundId + 1
@@ -281,7 +281,7 @@ contract RedemptionTest is Test {
         (uint80 _roundId,,,,) = oracle.latestRoundData();
         oracle.update({
             _roundId: _roundId + 1,
-            _answer: 700_000_000,
+            _answer: 7_000_000,
             _startedAt: block.timestamp,
             _updatedAt: block.timestamp,
             _answeredInRound: _roundId + 1
