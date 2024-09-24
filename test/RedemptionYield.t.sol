@@ -7,7 +7,7 @@ import {Pausable} from "openzeppelin-contracts/contracts/utils/Pausable.sol";
 import {AllowList} from "ustb/src/AllowList.sol";
 import {TestOracle} from "./TestOracle.sol";
 import {RedemptionYield} from "../src/RedemptionYield.sol";
-import {IUSTB} from "../src/IUSTB.sol";
+import {ISuperstateToken} from "../src/ISuperstateToken.sol";
 import {IComet} from "../src/IComet.sol";
 import {deployRedemptionYield} from "../script/RedemptionYield.s.sol";
 
@@ -17,10 +17,10 @@ contract RedemptionYieldTest is Test {
     AllowList constant allowList = AllowList(0x42d75C8FdBBF046DF0Fe1Ff388DA16fF99dE8149);
     address allowListAdmin = 0x8C7Db8A96d39F76D9f456db23d591C2FDd0e2F8a;
 
-    IERC20 constant USTB = IERC20(0x43415eB6ff9DB7E26A15b704e7A3eDCe97d31C4e);
+    IERC20 constant SUPERSTATE_TOKEN = IERC20(0x43415eB6ff9DB7E26A15b704e7A3eDCe97d31C4e);
     IERC20 constant USDC = IERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
     IComet constant COMPOUND = IComet(0xc3d688B66703497DAA19211EEdff47f25384cdc3);
-    address constant USTB_HOLDER = 0xB8851D8fdd9a007A33f6b45BF602046644aBE81f;
+    address constant SUPERSTATE_TOKEN_HOLDER = 0xB8851D8fdd9a007A33f6b45BF602046644aBE81f;
 
     uint256 constant USDC_AMOUNT = 1e13;
     uint256 constant ENTITY_ID = 1;
@@ -37,7 +37,7 @@ contract RedemptionYieldTest is Test {
         oracle = new TestOracle(1, 10_192_577, 1_716_994_000, 1_716_994_030, 1);
 
         (address payable _address,,) = deployRedemptionYield(
-            admin, address(USTB), address(oracle), address(USDC), MAXIMUM_ORACLE_DELAY, address(COMPOUND)
+            admin, address(SUPERSTATE_TOKEN), address(oracle), address(USDC), MAXIMUM_ORACLE_DELAY, address(COMPOUND)
         );
         redemption = RedemptionYield(_address);
 
@@ -60,7 +60,7 @@ contract RedemptionYieldTest is Test {
     }
 
     function testDepositUnauthorized() public {
-        vm.startPrank(USTB_HOLDER);
+        vm.startPrank(SUPERSTATE_TOKEN_HOLDER);
         USDC.approve(address(redemption), 0);
         vm.expectRevert(RedemptionYield.Unauthorized.selector);
         redemption.deposit(0);
@@ -145,7 +145,7 @@ contract RedemptionYieldTest is Test {
     }
 
     function testWithdrawNotAdmin() public {
-        hoax(USTB_HOLDER);
+        hoax(SUPERSTATE_TOKEN_HOLDER);
         vm.expectRevert(RedemptionYield.Unauthorized.selector);
         redemption.withdraw(address(USDC), admin, 1);
     }
@@ -159,84 +159,84 @@ contract RedemptionYieldTest is Test {
     function testWithdrawBalanceZero() public {
         hoax(admin);
         vm.expectRevert(RedemptionYield.InsufficientBalance.selector);
-        redemption.withdraw(address(USTB), admin, 1);
+        redemption.withdraw(address(SUPERSTATE_TOKEN), admin, 1);
     }
 
     function testRedeemAmountTooLarge() public {
-        uint256 ustbBalance = USTB.balanceOf(USTB_HOLDER);
+        uint256 superstateTokenBalance = SUPERSTATE_TOKEN.balanceOf(SUPERSTATE_TOKEN_HOLDER);
 
-        vm.startPrank(USTB_HOLDER);
-        USTB.approve(address(redemption), ustbBalance);
+        vm.startPrank(SUPERSTATE_TOKEN_HOLDER);
+        SUPERSTATE_TOKEN.approve(address(redemption), superstateTokenBalance);
         // Not enough USDC in the contract
         vm.expectRevert(RedemptionYield.InsufficientBalance.selector);
-        redemption.redeem(ustbBalance);
+        redemption.redeem(superstateTokenBalance);
         vm.stopPrank();
     }
 
     function testRedeem() public {
-        assertEq(USDC.balanceOf(USTB_HOLDER), 0);
+        assertEq(USDC.balanceOf(SUPERSTATE_TOKEN_HOLDER), 0);
 
-        uint256 ustbBalance = USTB.balanceOf(USTB_HOLDER);
-        uint256 ustbAmount = redemption.maxUstbRedemptionAmount();
+        uint256 superstateTokenBalance = SUPERSTATE_TOKEN.balanceOf(SUPERSTATE_TOKEN_HOLDER);
+        uint256 superstateTokenAmount = redemption.maxUstbRedemptionAmount();
 
-        // usdc balance * 1e6 (chainlink precision) * 1e6 (ustb precision) / feed price * 1e6 (usdc precision)
+        // usdc balance * 1e6 (chainlink precision) * 1e6 (superstateToken precision) / feed price * 1e6 (usdc precision)
         // 1e13 * 1e6 / 10192577
-        assertEq(ustbAmount, 981106152055);
+        assertEq(superstateTokenAmount, 981106152055);
 
-        assertGe(ustbBalance, ustbAmount, "Don't redeem more than holder has");
+        assertGe(superstateTokenBalance, superstateTokenAmount, "Don't redeem more than holder has");
 
         vm.startPrank(admin);
         redemption.pause();
         redemption.unpause();
         vm.stopPrank();
 
-        vm.startPrank(USTB_HOLDER);
-        USTB.approve(address(redemption), ustbAmount);
+        vm.startPrank(SUPERSTATE_TOKEN_HOLDER);
+        SUPERSTATE_TOKEN.approve(address(redemption), superstateTokenAmount);
         vm.expectEmit(true, true, true, true);
-        emit IUSTB.Transfer({from: USTB_HOLDER, to: address(redemption), value: ustbAmount});
+        emit ISuperstateToken.Transfer({from: SUPERSTATE_TOKEN_HOLDER, to: address(redemption), value: superstateTokenAmount});
         vm.expectEmit(true, true, true, true);
-        emit IUSTB.Burn({burner: address(redemption), from: address(redemption), amount: ustbAmount});
+        emit ISuperstateToken.Burn({burner: address(redemption), from: address(redemption), amount: superstateTokenAmount});
         vm.expectEmit(true, true, true, true);
         // ~1e13, the original USDC amount
-        emit RedemptionYield.Redeem({redeemer: USTB_HOLDER, ustbInAmount: ustbAmount, usdcOutAmount: 9999999999994});
-        redemption.redeem(ustbAmount);
+        emit RedemptionYield.Redeem({redeemer: SUPERSTATE_TOKEN_HOLDER, superstateTokenInAmount: superstateTokenAmount, usdcOutAmount: 9999999999994});
+        redemption.redeem(superstateTokenAmount);
         vm.stopPrank();
 
-        uint256 redeemerUsdcBalance = USDC.balanceOf(USTB_HOLDER);
+        uint256 redeemerUsdcBalance = USDC.balanceOf(SUPERSTATE_TOKEN_HOLDER);
         uint256 redemptionContractCusdcBalance = COMPOUND.balanceOf(address(redemption));
         uint256 lostToRounding = 2;
 
-        assertEq(USTB.balanceOf(USTB_HOLDER), ustbBalance - ustbAmount);
+        assertEq(SUPERSTATE_TOKEN.balanceOf(SUPERSTATE_TOKEN_HOLDER), superstateTokenBalance - superstateTokenAmount);
         assertEq(USDC_AMOUNT - redemptionContractCusdcBalance - lostToRounding, redeemerUsdcBalance);
 
-        assertEq(USTB.balanceOf(address(redemption)), 0);
+        assertEq(SUPERSTATE_TOKEN.balanceOf(address(redemption)), 0);
 
         assertEq(redemptionContractCusdcBalance, 6 - lostToRounding);
         assertEq(redemptionContractCusdcBalance, USDC_AMOUNT - redeemerUsdcBalance - lostToRounding);
     }
 
-    function testRedeemFuzz(uint256 ustbRedeemAmount) public {
+    function testRedeemFuzz(uint256 superstateTokenRedeemAmount) public {
         uint256 maxRedemptionAmount = redemption.maxUstbRedemptionAmount();
 
-        ustbRedeemAmount = bound(ustbRedeemAmount, 1, maxRedemptionAmount);
+        superstateTokenRedeemAmount = bound(superstateTokenRedeemAmount, 1, maxRedemptionAmount);
 
-        assertEq(USDC.balanceOf(USTB_HOLDER), 0);
+        assertEq(USDC.balanceOf(SUPERSTATE_TOKEN_HOLDER), 0);
 
-        uint256 redeemerUstbBalanceBefore = USTB.balanceOf(USTB_HOLDER);
+        uint256 redeemerUstbBalanceBefore = SUPERSTATE_TOKEN.balanceOf(SUPERSTATE_TOKEN_HOLDER);
 
-        vm.startPrank(USTB_HOLDER);
-        USTB.approve(address(redemption), ustbRedeemAmount);
-        redemption.redeem(ustbRedeemAmount);
+        vm.startPrank(SUPERSTATE_TOKEN_HOLDER);
+        SUPERSTATE_TOKEN.approve(address(redemption), superstateTokenRedeemAmount);
+        redemption.redeem(superstateTokenRedeemAmount);
         vm.stopPrank();
 
-        uint256 redeemerUstbBalanceAfter = USTB.balanceOf(USTB_HOLDER);
-        uint256 redeemerUsdcBalanceAfter = USDC.balanceOf(USTB_HOLDER);
+        uint256 redeemerUstbBalanceAfter = SUPERSTATE_TOKEN.balanceOf(SUPERSTATE_TOKEN_HOLDER);
+        uint256 redeemerUsdcBalanceAfter = USDC.balanceOf(SUPERSTATE_TOKEN_HOLDER);
         uint256 redemptionContractCusdcBalanceAfter = COMPOUND.balanceOf(address(redemption));
 
-        assertEq(USTB.balanceOf(address(redemption)), 0, "Contract has 0 USTB balance");
+        assertEq(SUPERSTATE_TOKEN.balanceOf(address(redemption)), 0, "Contract has 0 SUPERSTATE_TOKEN balance");
 
         assertEq(
-            redeemerUstbBalanceAfter, redeemerUstbBalanceBefore - ustbRedeemAmount, "Redeemer has proper USTB balance"
+            redeemerUstbBalanceAfter, redeemerUstbBalanceBefore - superstateTokenRedeemAmount, "Redeemer has proper SUPERSTATE_TOKEN balance"
         );
 
         // lose 0-3 because of rounding on compound side
@@ -264,14 +264,14 @@ contract RedemptionYieldTest is Test {
             _answeredInRound: _roundId + 1
         });
 
-        assertEq(USDC.balanceOf(USTB_HOLDER), 0);
+        assertEq(USDC.balanceOf(SUPERSTATE_TOKEN_HOLDER), 0);
 
-        uint256 ustbAmount = redemption.maxUstbRedemptionAmount();
+        uint256 superstateTokenAmount = redemption.maxUstbRedemptionAmount();
 
-        vm.startPrank(USTB_HOLDER);
-        USTB.approve(address(redemption), ustbAmount);
+        vm.startPrank(SUPERSTATE_TOKEN_HOLDER);
+        SUPERSTATE_TOKEN.approve(address(redemption), superstateTokenAmount);
         vm.expectRevert(RedemptionYield.BadChainlinkData.selector);
-        redemption.redeem(ustbAmount);
+        redemption.redeem(superstateTokenAmount);
         vm.stopPrank();
     }
 
@@ -287,35 +287,35 @@ contract RedemptionYieldTest is Test {
             _answeredInRound: _roundId + 1
         });
 
-        assertEq(USDC.balanceOf(USTB_HOLDER), 0);
+        assertEq(USDC.balanceOf(SUPERSTATE_TOKEN_HOLDER), 0);
 
-        uint256 ustbBalance = USTB.balanceOf(USTB_HOLDER);
+        uint256 superstateTokenBalance = SUPERSTATE_TOKEN.balanceOf(SUPERSTATE_TOKEN_HOLDER);
 
-        vm.startPrank(USTB_HOLDER);
-        USTB.approve(address(redemption), ustbBalance);
-        redemption.redeem(ustbBalance);
+        vm.startPrank(SUPERSTATE_TOKEN_HOLDER);
+        SUPERSTATE_TOKEN.approve(address(redemption), superstateTokenBalance);
+        redemption.redeem(superstateTokenBalance);
         vm.stopPrank();
     }
 
     function testRedeemBadDataOldDataFail() public {
         vm.warp(block.timestamp + MAXIMUM_ORACLE_DELAY);
 
-        assertEq(USDC.balanceOf(USTB_HOLDER), 0);
+        assertEq(USDC.balanceOf(SUPERSTATE_TOKEN_HOLDER), 0);
 
-        uint256 ustbBalance = USTB.balanceOf(USTB_HOLDER);
-        uint256 ustbAmount = redemption.maxUstbRedemptionAmount();
+        uint256 superstateTokenBalance = SUPERSTATE_TOKEN.balanceOf(SUPERSTATE_TOKEN_HOLDER);
+        uint256 superstateTokenAmount = redemption.maxUstbRedemptionAmount();
 
-        assertGe(ustbBalance, ustbAmount, "Don't redeem more than holder has");
+        assertGe(superstateTokenBalance, superstateTokenAmount, "Don't redeem more than holder has");
 
-        vm.startPrank(USTB_HOLDER);
-        USTB.approve(address(redemption), ustbAmount);
+        vm.startPrank(SUPERSTATE_TOKEN_HOLDER);
+        SUPERSTATE_TOKEN.approve(address(redemption), superstateTokenAmount);
         vm.expectRevert(RedemptionYield.BadChainlinkData.selector);
-        redemption.redeem(ustbAmount);
+        redemption.redeem(superstateTokenAmount);
         vm.stopPrank();
     }
 
     function testRedeemAmountZeroFail() public {
-        hoax(USTB_HOLDER);
+        hoax(SUPERSTATE_TOKEN_HOLDER);
         vm.expectRevert(RedemptionYield.BadArgs.selector);
         redemption.redeem(0);
     }
@@ -334,7 +334,7 @@ contract RedemptionYieldTest is Test {
     function testNonAdminSetOracleDelayFail() public {
         uint256 newDelay = 1234567;
 
-        hoax(USTB_HOLDER);
+        hoax(SUPERSTATE_TOKEN_HOLDER);
         vm.expectRevert(RedemptionYield.Unauthorized.selector);
         redemption.setMaximumOracleDelay(newDelay);
     }
@@ -351,7 +351,7 @@ contract RedemptionYieldTest is Test {
         hoax(admin);
         redemption.pause();
 
-        hoax(USTB_HOLDER);
+        hoax(SUPERSTATE_TOKEN_HOLDER);
         vm.expectRevert(Pausable.EnforcedPause.selector);
         redemption.redeem(1);
     }
