@@ -8,12 +8,11 @@ import {ERC20} from "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 import {Pausable} from "openzeppelin-contracts/contracts/utils/Pausable.sol";
 import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IUSTB} from "./IUSTB.sol";
-import {IComet} from "./IComet.sol";
 
-/// @title Redemption
+/// @title RedemptionIdle
 /// @author Jon Walch and Max Wolff (Superstate) https://github.com/superstateinc
-/// @notice A contract that allows USTB holders to redeem their USTB for USDC
-contract Redemption is Pausable {
+/// @notice A contract that allows USTB holders to redeem their USTB for USDC, without deploying the idle USDC into lending protocols.
+contract RedemptionIdle is Pausable {
     using SafeERC20 for IERC20;
 
     /// @notice Decimals of USDC
@@ -46,9 +45,6 @@ contract Redemption is Pausable {
     /// @notice The USDC contract
     IERC20 public immutable USDC;
 
-    /// @notice The CompoundV3 contract
-    IComet public immutable COMPOUND;
-
     /// @notice Admin address with exclusive privileges for withdrawing tokens
     address public immutable ADMIN;
 
@@ -73,12 +69,6 @@ contract Redemption is Pausable {
     /// @param amount The amount of token the redeemer gets back
     event Withdraw(address indexed token, address indexed withdrawer, address indexed to, uint256 amount);
 
-    /// @dev Event emitted when usdc is deposited into the contract via the deposit function
-    /// @param token The address of the token being deposited
-    /// @param depositor The address of the caller
-    /// @param amount The amount of token deposited
-    event Deposit(address indexed token, address indexed depositor, uint256 amount);
-
     /// @dev Thrown when an argument is invalid
     error BadArgs();
 
@@ -96,8 +86,7 @@ contract Redemption is Pausable {
         address _ustb,
         address _ustbChainlinkFeedAddress,
         address _usdc,
-        uint256 _maximumOracleDelay,
-        address _compound
+        uint256 _maximumOracleDelay
     ) {
         CHAINLINK_FEED_ADDRESS = _ustbChainlinkFeedAddress;
         CHAINLINK_FEED_DECIMALS = AggregatorV3Interface(CHAINLINK_FEED_ADDRESS).decimals();
@@ -111,7 +100,6 @@ contract Redemption is Pausable {
         ADMIN = _admin;
         USTB = IERC20(_ustb);
         USDC = IERC20(_usdc);
-        COMPOUND = IComet(_compound);
 
         require(ERC20(_ustb).decimals() == USTB_DECIMALS);
         require(ERC20(_usdc).decimals() == USDC_DECIMALS);
@@ -189,8 +177,7 @@ contract Redemption is Pausable {
     function maxUstbRedemptionAmount() external view returns (uint256 _ustbAmount) {
         (,, uint256 usdPerUstbChainlinkRaw) = _getChainlinkPrice();
         // divide a USDC amount by the USD per USTB Chainlink price then scale back up to a USTB amount
-        // 1 cUSDC = 1 USDC
-        _ustbAmount = (COMPOUND.balanceOf(address(this)) * CHAINLINK_FEED_PRECISION * USTB_PRECISION)
+        _ustbAmount = (USDC.balanceOf(address(this)) * CHAINLINK_FEED_PRECISION * USTB_PRECISION)
             / (usdPerUstbChainlinkRaw * USDC_PRECISION);
     }
 
@@ -208,10 +195,10 @@ contract Redemption is Pausable {
         uint256 usdcOutAmount =
             (ustbInAmount * usdPerUstbChainlinkRaw * USDC_PRECISION) / (CHAINLINK_FEED_PRECISION * USTB_PRECISION);
 
-        if (COMPOUND.balanceOf(address(this)) < usdcOutAmount) revert InsufficientBalance();
+        if (USDC.balanceOf(address(this)) < usdcOutAmount) revert InsufficientBalance();
 
         USTB.safeTransferFrom({from: msg.sender, to: address(this), value: ustbInAmount});
-        COMPOUND.withdrawTo({to: msg.sender, asset: address(USDC), amount: usdcOutAmount});
+        USDC.safeTransfer({to: msg.sender, value: usdcOutAmount});
         IUSTB(address(USTB)).burn(ustbInAmount);
 
         emit Redeem({redeemer: msg.sender, ustbInAmount: ustbInAmount, usdcOutAmount: usdcOutAmount});
@@ -219,8 +206,6 @@ contract Redemption is Pausable {
 
     /// @notice The ```withdraw``` function allows the admin to withdraw any type of ERC20
     /// @dev Requires msg.sender to be the admin address
-    /// @dev If you specify the compound (cUSDC) address, you'll withdraw from compound and receive USDC, every other token works as expected.
-    /// @dev Allows type(uint256).max withdraw from Compound when COMPOUND is the _token argument
     /// @param _token The address of the token to withdraw
     /// @param to The address where the tokens are going
     /// @param amount The amount of `_token` to withdraw
@@ -231,37 +216,9 @@ contract Redemption is Pausable {
         IERC20 token = IERC20(_token);
         uint256 balance = token.balanceOf(address(this));
 
-        if (_token == address(COMPOUND)) {
-            if (amount == type(uint256).max) {
-                uint256 compoundBalance = COMPOUND.balanceOf(address(this));
-                COMPOUND.withdrawTo({to: to, asset: address(USDC), amount: amount});
-                // type(uint256).max supplied as amount to `withdrawTo` means withdraw all. We need to get the balance first,
-                // otherwise the amount argument to the Withdraw event would be type(uint256).max instead of the actual amount
-                emit Withdraw({token: address(USDC), withdrawer: msg.sender, to: to, amount: compoundBalance});
-            } else {
-                COMPOUND.withdrawTo({to: to, asset: address(USDC), amount: amount});
-                emit Withdraw({token: address(USDC), withdrawer: msg.sender, to: to, amount: amount});
-            }
-        } else {
-            if (balance < amount) revert InsufficientBalance();
+        if (balance < amount) revert InsufficientBalance();
 
-            token.safeTransfer({to: to, value: amount});
-            emit Withdraw({token: _token, withdrawer: msg.sender, to: to, amount: amount});
-        }
-    }
-
-    /// @notice The ```deposit``` function transfer USDC from the caller to this contract and then to Compound v3 to accrue interest
-    /// @dev Requires msg.sender to be the admin address
-    /// @param usdcAmount amount of approved usdc to put into this contract / deposit in compound
-    function deposit(uint256 usdcAmount) external {
-        _requireAuthorized();
-        if (usdcAmount == 0) revert BadArgs();
-
-        USDC.safeTransferFrom({from: msg.sender, to: address(this), value: usdcAmount});
-
-        USDC.approve({spender: address(COMPOUND), value: usdcAmount});
-        COMPOUND.supply({asset: address(USDC), amount: usdcAmount});
-
-        emit Deposit({token: address(USDC), depositor: msg.sender, amount: usdcAmount});
+        token.safeTransfer({to: to, value: amount});
+        emit Withdraw({token: _token, withdrawer: msg.sender, to: to, amount: amount});
     }
 }

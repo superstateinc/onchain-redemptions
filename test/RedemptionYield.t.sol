@@ -6,12 +6,12 @@ import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {Pausable} from "openzeppelin-contracts/contracts/utils/Pausable.sol";
 import {AllowList} from "ustb/src/AllowList.sol";
 import {TestOracle} from "./TestOracle.sol";
-import {Redemption} from "../src/Redemption.sol";
+import {RedemptionYield} from "../src/RedemptionYield.sol";
 import {IUSTB} from "../src/IUSTB.sol";
 import {IComet} from "../src/IComet.sol";
-import {deployRedemption} from "../script/Redemption.s.sol";
+import {deployRedemptionYield} from "../script/RedemptionYield.s.sol";
 
-contract RedemptionTest is Test {
+contract RedemptionYieldTest is Test {
     address public admin = address(this);
 
     AllowList constant allowList = AllowList(0x42d75C8FdBBF046DF0Fe1Ff388DA16fF99dE8149);
@@ -28,7 +28,7 @@ contract RedemptionTest is Test {
     uint256 constant MAXIMUM_ORACLE_DELAY = 93_600;
 
     TestOracle public oracle;
-    Redemption public redemption;
+    RedemptionYield public redemption;
 
     function setUp() public {
         vm.createSelectFork(vm.envString("ETH_RPC_URL"), 19_976_215);
@@ -36,10 +36,10 @@ contract RedemptionTest is Test {
         // roundId, answer, startedAt, updatedAt, answeredInRound
         oracle = new TestOracle(1, 10_192_577, 1_716_994_000, 1_716_994_030, 1);
 
-        (address payable _address,,) = deployRedemption(
+        (address payable _address,,) = deployRedemptionYield(
             admin, address(USTB), address(oracle), address(USDC), MAXIMUM_ORACLE_DELAY, address(COMPOUND)
         );
-        redemption = Redemption(_address);
+        redemption = RedemptionYield(_address);
 
         vm.startPrank(allowListAdmin);
         allowList.setEntityIdForAddress(ENTITY_ID, address(redemption));
@@ -51,7 +51,7 @@ contract RedemptionTest is Test {
         vm.startPrank(admin);
         USDC.approve(address(redemption), USDC_AMOUNT);
         vm.expectEmit(true, true, true, true);
-        emit Redemption.Deposit({token: address(USDC), depositor: admin, amount: USDC_AMOUNT});
+        emit RedemptionYield.Deposit({token: address(USDC), depositor: admin, amount: USDC_AMOUNT});
         redemption.deposit(USDC_AMOUNT);
         vm.stopPrank();
 
@@ -62,7 +62,7 @@ contract RedemptionTest is Test {
     function testDepositUnauthorized() public {
         vm.startPrank(USTB_HOLDER);
         USDC.approve(address(redemption), 0);
-        vm.expectRevert(Redemption.Unauthorized.selector);
+        vm.expectRevert(RedemptionYield.Unauthorized.selector);
         redemption.deposit(0);
         vm.stopPrank();
     }
@@ -70,7 +70,7 @@ contract RedemptionTest is Test {
     function testDepositBadArgs() public {
         vm.startPrank(admin);
         USDC.approve(address(redemption), 0);
-        vm.expectRevert(Redemption.BadArgs.selector);
+        vm.expectRevert(RedemptionYield.BadArgs.selector);
         redemption.deposit(0);
         vm.stopPrank();
     }
@@ -90,7 +90,7 @@ contract RedemptionTest is Test {
 
         hoax(admin);
         vm.expectEmit(true, true, true, true);
-        emit Redemption.Withdraw({token: address(USDC), withdrawer: admin, to: admin, amount: interestBalance});
+        emit RedemptionYield.Withdraw({token: address(USDC), withdrawer: admin, to: admin, amount: interestBalance});
         redemption.withdraw(address(COMPOUND), admin, interestBalance);
 
         assertEq(0, USDC.balanceOf(address(redemption)), "No USDC in the redemption contract");
@@ -112,7 +112,7 @@ contract RedemptionTest is Test {
 
         hoax(admin);
         vm.expectEmit(true, true, true, true);
-        emit Redemption.Withdraw({token: address(USDC), withdrawer: admin, to: admin, amount: interestBalance});
+        emit RedemptionYield.Withdraw({token: address(USDC), withdrawer: admin, to: admin, amount: interestBalance});
         redemption.withdraw(address(COMPOUND), admin, type(uint256).max);
 
         assertEq(0, USDC.balanceOf(address(redemption)), "No USDC in the redemption contract");
@@ -127,7 +127,7 @@ contract RedemptionTest is Test {
     function testWithdraw() public {
         hoax(admin);
         vm.expectEmit(true, true, true, true);
-        emit Redemption.Withdraw({token: address(USDC), withdrawer: admin, to: admin, amount: USDC_AMOUNT - 1});
+        emit RedemptionYield.Withdraw({token: address(USDC), withdrawer: admin, to: admin, amount: USDC_AMOUNT - 1});
         redemption.withdraw(address(COMPOUND), admin, USDC_AMOUNT - 1);
 
         assertEq(USDC.balanceOf(admin), USDC_AMOUNT - 1);
@@ -138,7 +138,7 @@ contract RedemptionTest is Test {
 
         hoax(admin);
         vm.expectEmit(true, true, true, true);
-        emit Redemption.Withdraw({token: address(USDC), withdrawer: admin, to: admin, amount: USDC_AMOUNT});
+        emit RedemptionYield.Withdraw({token: address(USDC), withdrawer: admin, to: admin, amount: USDC_AMOUNT});
         redemption.withdraw(address(USDC), admin, USDC_AMOUNT);
 
         assertEq(USDC.balanceOf(admin), USDC_AMOUNT);
@@ -146,19 +146,19 @@ contract RedemptionTest is Test {
 
     function testWithdrawNotAdmin() public {
         hoax(USTB_HOLDER);
-        vm.expectRevert(Redemption.Unauthorized.selector);
+        vm.expectRevert(RedemptionYield.Unauthorized.selector);
         redemption.withdraw(address(USDC), admin, 1);
     }
 
     function testWithdrawAmountZero() public {
         hoax(admin);
-        vm.expectRevert(Redemption.BadArgs.selector);
+        vm.expectRevert(RedemptionYield.BadArgs.selector);
         redemption.withdraw(address(USDC), admin, 0);
     }
 
     function testWithdrawBalanceZero() public {
         hoax(admin);
-        vm.expectRevert(Redemption.InsufficientBalance.selector);
+        vm.expectRevert(RedemptionYield.InsufficientBalance.selector);
         redemption.withdraw(address(USTB), admin, 1);
     }
 
@@ -168,7 +168,7 @@ contract RedemptionTest is Test {
         vm.startPrank(USTB_HOLDER);
         USTB.approve(address(redemption), ustbBalance);
         // Not enough USDC in the contract
-        vm.expectRevert(Redemption.InsufficientBalance.selector);
+        vm.expectRevert(RedemptionYield.InsufficientBalance.selector);
         redemption.redeem(ustbBalance);
         vm.stopPrank();
     }
@@ -198,7 +198,7 @@ contract RedemptionTest is Test {
         emit IUSTB.Burn({burner: address(redemption), from: address(redemption), amount: ustbAmount});
         vm.expectEmit(true, true, true, true);
         // ~1e13, the original USDC amount
-        emit Redemption.Redeem({redeemer: USTB_HOLDER, ustbInAmount: ustbAmount, usdcOutAmount: 9999999999994});
+        emit RedemptionYield.Redeem({redeemer: USTB_HOLDER, ustbInAmount: ustbAmount, usdcOutAmount: 9999999999994});
         redemption.redeem(ustbAmount);
         vm.stopPrank();
 
@@ -270,7 +270,7 @@ contract RedemptionTest is Test {
 
         vm.startPrank(USTB_HOLDER);
         USTB.approve(address(redemption), ustbAmount);
-        vm.expectRevert(Redemption.BadChainlinkData.selector);
+        vm.expectRevert(RedemptionYield.BadChainlinkData.selector);
         redemption.redeem(ustbAmount);
         vm.stopPrank();
     }
@@ -309,14 +309,14 @@ contract RedemptionTest is Test {
 
         vm.startPrank(USTB_HOLDER);
         USTB.approve(address(redemption), ustbAmount);
-        vm.expectRevert(Redemption.BadChainlinkData.selector);
+        vm.expectRevert(RedemptionYield.BadChainlinkData.selector);
         redemption.redeem(ustbAmount);
         vm.stopPrank();
     }
 
     function testRedeemAmountZeroFail() public {
         hoax(USTB_HOLDER);
-        vm.expectRevert(Redemption.BadArgs.selector);
+        vm.expectRevert(RedemptionYield.BadArgs.selector);
         redemption.redeem(0);
     }
 
@@ -325,7 +325,7 @@ contract RedemptionTest is Test {
 
         hoax(admin);
         vm.expectEmit(true, true, true, true);
-        emit Redemption.SetMaximumOracleDelay({oldMaxOracleDelay: MAXIMUM_ORACLE_DELAY, newMaxOracleDelay: newDelay});
+        emit RedemptionYield.SetMaximumOracleDelay({oldMaxOracleDelay: MAXIMUM_ORACLE_DELAY, newMaxOracleDelay: newDelay});
         redemption.setMaximumOracleDelay(newDelay);
 
         assertEq(newDelay, redemption.maximumOracleDelay());
@@ -335,7 +335,7 @@ contract RedemptionTest is Test {
         uint256 newDelay = 1234567;
 
         hoax(USTB_HOLDER);
-        vm.expectRevert(Redemption.Unauthorized.selector);
+        vm.expectRevert(RedemptionYield.Unauthorized.selector);
         redemption.setMaximumOracleDelay(newDelay);
     }
 
@@ -343,7 +343,7 @@ contract RedemptionTest is Test {
         uint256 oldDelay = redemption.maximumOracleDelay();
 
         hoax(admin);
-        vm.expectRevert(Redemption.BadArgs.selector);
+        vm.expectRevert(RedemptionYield.BadArgs.selector);
         redemption.setMaximumOracleDelay(oldDelay);
     }
 

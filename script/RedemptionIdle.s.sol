@@ -2,28 +2,26 @@
 pragma solidity ^0.8.26;
 
 import {Script, console} from "forge-std/Script.sol";
-import {Redemption} from "../src/Redemption.sol";
+import {RedemptionIdle} from "../src/RedemptionIdle.sol";
 
-function deployRedemption(
+function deployRedemptionIdle(
     address admin,
     address ustb,
     address oracle,
     address usdc,
-    uint256 maximumOracleDelay,
-    address compound
+    uint256 maximumOracleDelay
 ) returns (address payable _address, bytes memory _constructorParams, string memory _contractName) {
-    _constructorParams = abi.encode(admin, ustb, oracle, usdc, maximumOracleDelay, compound);
+    _constructorParams = abi.encode(admin, ustb, oracle, usdc, maximumOracleDelay);
     _contractName = "";
-    _address = payable(address(new Redemption(admin, ustb, oracle, usdc, maximumOracleDelay, compound)));
+    _address = payable(address(new RedemptionIdle(admin, ustb, oracle, usdc, maximumOracleDelay)));
 }
 
-contract DeployRedemption is Script {
+contract DeployRedemptionIdle is Script {
     // all addresses are mainnet
     address constant ADMIN = 0x8C7Db8A96d39F76D9f456db23d591C2FDd0e2F8a;
     address constant USTB = 0x43415eB6ff9DB7E26A15b704e7A3eDCe97d31C4e;
     address constant USTB_NAVS_ORACLE = address(0); // TODO
     address constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
-    address constant COMPOUND = 0xc3d688B66703497DAA19211EEdff47f25384cdc3;
 
     uint256 constant MAXIMUM_ORACLE_DELAY = 93_600;
 
@@ -41,7 +39,7 @@ contract DeployRedemption is Script {
     {
         vm.startBroadcast(deployer);
         (_address, _constructorParams, _contractName) =
-            deployRedemption(ADMIN, USTB, USTB_NAVS_ORACLE, USDC, MAXIMUM_ORACLE_DELAY, COMPOUND);
+            deployRedemptionIdle(ADMIN, USTB, USTB_NAVS_ORACLE, USDC, MAXIMUM_ORACLE_DELAY);
 
         console.log("_constructorParams:", string(abi.encode(_constructorParams)));
         console.logBytes(_constructorParams);
