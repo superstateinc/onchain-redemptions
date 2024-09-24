@@ -11,7 +11,7 @@ import {IUSTB} from "../src/IUSTB.sol";
 import {IComet} from "../src/IComet.sol";
 import {deployRedemptionIdle} from "../script/RedemptionIdle.s.sol";
 
-contract RedemptionTest is Test {
+contract RedemptionIdleTest is Test {
     address public admin = address(this);
 
     AllowList constant allowList = AllowList(0x42d75C8FdBBF046DF0Fe1Ff388DA16fF99dE8149);
@@ -52,15 +52,6 @@ contract RedemptionTest is Test {
         vm.startPrank(allowListAdmin);
         allowList.setEntityIdForAddress(ENTITY_ID, address(redemption));
         vm.stopPrank();
-    }
-
-    function testMaxAmountWithdraw() public {
-        hoax(admin);
-        vm.expectEmit(true, true, true, true);
-        emit RedemptionYield.Withdraw({token: address(USDC), withdrawer: admin, to: admin, amount: USDC_AMOUNT});
-        redemption.withdraw(address(USDC), admin, type(uint256).max);
-
-        assertEq(0, USDC.balanceOf(address(redemption)), "No USDC in the redemption contract");
     }
 
     function testSendEtherFail() public {

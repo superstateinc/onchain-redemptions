@@ -16,7 +16,7 @@ function deployRedemptionIdle(
     _address = payable(address(new RedemptionIdle(admin, ustb, oracle, usdc, maximumOracleDelay)));
 }
 
-contract DeployRedemptionYield is Script {
+contract DeployRedemptionIdle is Script {
     // all addresses are mainnet
     address constant ADMIN = 0x8C7Db8A96d39F76D9f456db23d591C2FDd0e2F8a;
     address constant USTB = 0x43415eB6ff9DB7E26A15b704e7A3eDCe97d31C4e;

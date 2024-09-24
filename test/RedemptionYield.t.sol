@@ -11,7 +11,7 @@ import {IUSTB} from "../src/IUSTB.sol";
 import {IComet} from "../src/IComet.sol";
 import {deployRedemptionYield} from "../script/RedemptionYield.s.sol";
 
-contract RedemptionTest is Test {
+contract RedemptionYieldTest is Test {
     address public admin = address(this);
 
     AllowList constant allowList = AllowList(0x42d75C8FdBBF046DF0Fe1Ff388DA16fF99dE8149);
