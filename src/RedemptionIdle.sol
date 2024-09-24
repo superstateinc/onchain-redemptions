@@ -69,12 +69,6 @@ contract RedemptionIdle is Pausable {
     /// @param amount The amount of token the redeemer gets back
     event Withdraw(address indexed token, address indexed withdrawer, address indexed to, uint256 amount);
 
-    /// @dev Event emitted when usdc is deposited into the contract via the deposit function
-    /// @param token The address of the token being deposited
-    /// @param depositor The address of the caller
-    /// @param amount The amount of token deposited
-    event Deposit(address indexed token, address indexed depositor, uint256 amount);
-
     /// @dev Thrown when an argument is invalid
     error BadArgs();
 
@@ -183,7 +177,6 @@ contract RedemptionIdle is Pausable {
     function maxUstbRedemptionAmount() external view returns (uint256 _ustbAmount) {
         (,, uint256 usdPerUstbChainlinkRaw) = _getChainlinkPrice();
         // divide a USDC amount by the USD per USTB Chainlink price then scale back up to a USTB amount
-        // 1 cUSDC = 1 USDC
         _ustbAmount = (USDC.balanceOf(address(this)) * CHAINLINK_FEED_PRECISION * USTB_PRECISION)
             / (usdPerUstbChainlinkRaw * USDC_PRECISION);
     }
