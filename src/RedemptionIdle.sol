@@ -11,7 +11,7 @@ import {IUSTB} from "./IUSTB.sol";
 
 /// @title RedemptionIdle
 /// @author Jon Walch and Max Wolff (Superstate) https://github.com/superstateinc
-/// @notice A contract that allows USTB holders to redeem their USTB for USDC
+/// @notice A contract that allows USTB holders to redeem their USTB for USDC, without deploying the idle USDC into lending protocols.
 contract RedemptionIdle is Pausable {
     using SafeERC20 for IERC20;
 

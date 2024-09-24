@@ -12,7 +12,7 @@ import {IComet} from "./IComet.sol";
 
 /// @title RedemptionYield
 /// @author Jon Walch and Max Wolff (Superstate) https://github.com/superstateinc
-/// @notice A contract that allows USTB holders to redeem their USTB for USDC
+/// @notice A contract that allows USTB holders to redeem their USTB for USDC, and deploys the idle USDC into lending protocols
 contract RedemptionYield is Pausable {
     using SafeERC20 for IERC20;
 
