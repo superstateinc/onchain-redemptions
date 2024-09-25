@@ -7,11 +7,11 @@ import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {ERC20} from "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 import {Pausable} from "openzeppelin-contracts/contracts/utils/Pausable.sol";
 import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
-import {IUSTB} from "./IUSTB.sol";
+import {ISuperstateToken} from "./ISuperstateToken.sol";
 
 /// @title RedemptionIdle
 /// @author Jon Walch and Max Wolff (Superstate) https://github.com/superstateinc
-/// @notice A contract that allows USTB holders to redeem their USTB for USDC, without deploying the idle USDC into lending protocols.
+/// @notice A contract that allows Superstate Token holders to redeem their token for USDC, without deploying the idle USDC into lending protocols.
 contract RedemptionIdle is Pausable {
     using SafeERC20 for IERC20;
 
@@ -21,26 +21,26 @@ contract RedemptionIdle is Pausable {
     /// @notice Precision of USDC
     uint256 public constant USDC_PRECISION = 10 ** USDC_DECIMALS;
 
-    /// @notice Decimals of USTB
-    uint256 public constant USTB_DECIMALS = 6;
+    /// @notice Decimals of SUPERSTATE_TOKEN
+    uint256 public constant SUPERSTATE_TOKEN_DECIMALS = 6;
 
-    /// @notice Precision of USTB
-    uint256 public constant USTB_PRECISION = 10 ** USTB_DECIMALS;
+    /// @notice Precision of SUPERSTATE_TOKEN
+    uint256 public constant SUPERSTATE_TOKEN_PRECISION = 10 ** SUPERSTATE_TOKEN_DECIMALS;
 
     /// @notice Chainlink aggregator
     address public immutable CHAINLINK_FEED_ADDRESS;
 
-    /// @notice Decimals of USTB/USD chainlink feed
+    /// @notice Decimals of SUPERSTATE_TOKEN/USD chainlink feed
     uint8 public immutable CHAINLINK_FEED_DECIMALS;
 
-    /// @notice Precision of USTB/USD chainlink feed
+    /// @notice Precision of SUPERSTATE_TOKEN/USD chainlink feed
     uint256 public immutable CHAINLINK_FEED_PRECISION;
 
     /// @notice Lowest acceptable chainlink oracle price
     uint256 public immutable MINIMUM_ACCEPTABLE_PRICE;
 
-    /// @notice The USTB contract
-    IERC20 public immutable USTB;
+    /// @notice The SUPERSTATE_TOKEN contract
+    IERC20 public immutable SUPERSTATE_TOKEN;
 
     /// @notice The USDC contract
     IERC20 public immutable USDC;
@@ -56,11 +56,11 @@ contract RedemptionIdle is Pausable {
     /// @param newMaxOracleDelay The new max oracle delay
     event SetMaximumOracleDelay(uint256 oldMaxOracleDelay, uint256 newMaxOracleDelay);
 
-    /// @dev Event emitted when USTB is redeemed for USDC
+    /// @dev Event emitted when SUPERSTATE_TOKEN is redeemed for USDC
     /// @param redeemer The address of the entity redeeming
-    /// @param ustbInAmount The amount of USTB to redeem
+    /// @param superstateTokenInAmount The amount of SUPERSTATE_TOKEN to redeem
     /// @param usdcOutAmount The amount of USDC the redeemer gets back
-    event Redeem(address indexed redeemer, uint256 ustbInAmount, uint256 usdcOutAmount);
+    event Redeem(address indexed redeemer, uint256 superstateTokenInAmount, uint256 usdcOutAmount);
 
     /// @dev Event emitted when tokens are withdrawn
     /// @param token The address of the token being withdrawn
@@ -83,25 +83,25 @@ contract RedemptionIdle is Pausable {
 
     constructor(
         address _admin,
-        address _ustb,
-        address _ustbChainlinkFeedAddress,
+        address _superstateToken,
+        address _superstateTokenChainlinkFeedAddress,
         address _usdc,
         uint256 _maximumOracleDelay
     ) {
-        CHAINLINK_FEED_ADDRESS = _ustbChainlinkFeedAddress;
+        CHAINLINK_FEED_ADDRESS = _superstateTokenChainlinkFeedAddress;
         CHAINLINK_FEED_DECIMALS = AggregatorV3Interface(CHAINLINK_FEED_ADDRESS).decimals();
         CHAINLINK_FEED_PRECISION = 10 ** uint256(CHAINLINK_FEED_DECIMALS);
-        // USTB starts at $10.000000, Chainlink oracle with 6 decimals would represent as 10_000_000.
+        // SUPERSTATE_TOKEN starts at $10.000000, Chainlink oracle with 6 decimals would represent as 10_000_000.
         // This math will give us 7_000_000 or $7.000000.
         MINIMUM_ACCEPTABLE_PRICE = 7 * (10 ** uint256(CHAINLINK_FEED_DECIMALS));
 
         maximumOracleDelay = _maximumOracleDelay;
 
         ADMIN = _admin;
-        USTB = IERC20(_ustb);
+        SUPERSTATE_TOKEN = IERC20(_superstateToken);
         USDC = IERC20(_usdc);
 
-        require(ERC20(_ustb).decimals() == USTB_DECIMALS);
+        require(ERC20(_superstateToken).decimals() == SUPERSTATE_TOKEN_DECIMALS);
         require(ERC20(_usdc).decimals() == USDC_DECIMALS);
     }
 
@@ -156,7 +156,7 @@ contract RedemptionIdle is Pausable {
             AggregatorV3Interface(CHAINLINK_FEED_ADDRESS).latestRoundData();
 
         // If data is stale or below first price, set bad data to true and return
-        // 1_000_000_000 is $10.000000 in the oracle format, that was our starting NAV per Share price for USTB
+        // 1_000_000_000 is $10.000000 in the oracle format, that was our starting NAV per Share price for SUPERSTATE_TOKEN
         // The oracle should never return a price much lower than this
         _isBadData =
             _answer < int256(MINIMUM_ACCEPTABLE_PRICE) || ((block.timestamp - _chainlinkUpdatedAt) > maximumOracleDelay);
@@ -172,36 +172,36 @@ contract RedemptionIdle is Pausable {
         return _getChainlinkPrice();
     }
 
-    /// @notice The ```maxUstbRedemptionAmount``` function returns the maximum amount of USTB that can be redeemed based on the amount of USDC in the contract
-    /// @return _ustbAmount The maximum amount of USTB that can be redeemed
-    function maxUstbRedemptionAmount() external view returns (uint256 _ustbAmount) {
+    /// @notice The ```maxUstbRedemptionAmount``` function returns the maximum amount of SUPERSTATE_TOKEN that can be redeemed based on the amount of USDC in the contract
+    /// @return _superstateTokenAmount The maximum amount of SUPERSTATE_TOKEN that can be redeemed
+    function maxUstbRedemptionAmount() external view returns (uint256 _superstateTokenAmount) {
         (,, uint256 usdPerUstbChainlinkRaw) = _getChainlinkPrice();
-        // divide a USDC amount by the USD per USTB Chainlink price then scale back up to a USTB amount
-        _ustbAmount = (USDC.balanceOf(address(this)) * CHAINLINK_FEED_PRECISION * USTB_PRECISION)
+        // divide a USDC amount by the USD per SUPERSTATE_TOKEN Chainlink price then scale back up to a SUPERSTATE_TOKEN amount
+        _superstateTokenAmount = (USDC.balanceOf(address(this)) * CHAINLINK_FEED_PRECISION * SUPERSTATE_TOKEN_PRECISION)
             / (usdPerUstbChainlinkRaw * USDC_PRECISION);
     }
 
-    /// @notice The ```redeem``` function allows users to redeem USTB for USDC at the current oracle price
+    /// @notice The ```redeem``` function allows users to redeem SUPERSTATE_TOKEN for USDC at the current oracle price
     /// @dev Will revert if oracle data is stale or there is not enough USDC in the contract
-    /// @param ustbInAmount The amount of USTB to redeem
-    function redeem(uint256 ustbInAmount) external {
-        if (ustbInAmount == 0) revert BadArgs();
+    /// @param superstateTokenInAmount The amount of SUPERSTATE_TOKEN to redeem
+    function redeem(uint256 superstateTokenInAmount) external {
+        if (superstateTokenInAmount == 0) revert BadArgs();
         _requireNotPaused();
 
         (bool isBadData,, uint256 usdPerUstbChainlinkRaw) = _getChainlinkPrice();
         if (isBadData) revert BadChainlinkData();
 
-        // converts from a USTB amount to a USD amount, and then scales back up to a USDC amount
+        // converts from a SUPERSTATE_TOKEN amount to a USD amount, and then scales back up to a USDC amount
         uint256 usdcOutAmount =
-            (ustbInAmount * usdPerUstbChainlinkRaw * USDC_PRECISION) / (CHAINLINK_FEED_PRECISION * USTB_PRECISION);
+            (superstateTokenInAmount * usdPerUstbChainlinkRaw * USDC_PRECISION) / (CHAINLINK_FEED_PRECISION * SUPERSTATE_TOKEN_PRECISION);
 
         if (USDC.balanceOf(address(this)) < usdcOutAmount) revert InsufficientBalance();
 
-        USTB.safeTransferFrom({from: msg.sender, to: address(this), value: ustbInAmount});
+        SUPERSTATE_TOKEN.safeTransferFrom({from: msg.sender, to: address(this), value: superstateTokenInAmount});
         USDC.safeTransfer({to: msg.sender, value: usdcOutAmount});
-        IUSTB(address(USTB)).burn(ustbInAmount);
+        ISuperstateToken(address(SUPERSTATE_TOKEN)).burn(superstateTokenInAmount);
 
-        emit Redeem({redeemer: msg.sender, ustbInAmount: ustbInAmount, usdcOutAmount: usdcOutAmount});
+        emit Redeem({redeemer: msg.sender, superstateTokenInAmount: superstateTokenInAmount, usdcOutAmount: usdcOutAmount});
     }
 
     /// @notice The ```withdraw``` function allows the admin to withdraw any type of ERC20
