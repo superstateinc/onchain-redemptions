@@ -106,7 +106,7 @@ contract SuperstateOracle is AggregatorV3Interface, Ownable2Step {
         emit NewCheckpoint({timestamp: timestamp, effective_at: effective_at, navs: navs});
     }
 
-    // TODO: notice
+    // TODO: notice, automated systems only use this
     function addCheckpoint(uint64 timestamp, uint64 effective_at, uint128 navs, bool override_effective_at) external {
         _checkOwner();
 
@@ -118,8 +118,8 @@ contract SuperstateOracle is AggregatorV3Interface, Ownable2Step {
         });
     }
 
-    // TODO: notice
-    function addCheckpoints(NavsCheckpoint[] calldata _checkpoints, bool override_effective_at) external {
+    // TODO: notice, only manually use this
+    function addCheckpoints(NavsCheckpoint[] calldata _checkpoints) external {
         _checkOwner();
 
         for (uint256 i = 0; i < _checkpoints.length; ++i) {
@@ -127,7 +127,7 @@ contract SuperstateOracle is AggregatorV3Interface, Ownable2Step {
                 timestamp: _checkpoints[i].timestamp,
                 effective_at: _checkpoints[i].effective_at,
                 navs: _checkpoints[i].navs,
-                override_effective_at: override_effective_at
+                override_effective_at: true
             });
         }
     }
