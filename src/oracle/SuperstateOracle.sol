@@ -28,7 +28,7 @@ contract SuperstateOracle is AggregatorV3Interface, Ownable2Step {
     /// @notice Number of days in seconds to keep extrapolating from latest checkpoint
     uint256 public constant LATEST_CHECKPOINT_GOOD_THROUGH = 5 * 24 * 60 * 60; // 5 days in seconds
 
-    /// @notice Lowest acceptable chainlink oracle price
+    /// @notice Lowest acceptable Net Asset Value per Share price
     uint256 public immutable MINIMUM_ACCEPTABLE_PRICE;
 
     /// @notice Offchain Net Asset Value per Share checkpoints
