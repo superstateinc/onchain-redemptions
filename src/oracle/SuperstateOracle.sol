@@ -13,6 +13,7 @@ import {Ownable2Step} from "openzeppelin-contracts/contracts/access/Ownable2Step
 /// @author Jon Walch (Superstate) https://github.com/superstateinc
 /// @notice A contract that allows Superstate to price USTB by extrapolating previous prices forward in real time
 contract SuperstateOracle is AggregatorV3Interface, Ownable2Step {
+    // TODO: notice explaining fields
     struct NavsCheckpoint {
         uint64 timestamp;
         uint64 effective_at;
