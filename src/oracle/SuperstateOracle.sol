@@ -6,9 +6,6 @@ import {AggregatorV3Interface} from "chainlink/src/v0.8/shared/interfaces/Aggreg
 import {Ownable} from "openzeppelin-contracts/contracts/access/Ownable.sol";
 import {Ownable2Step} from "openzeppelin-contracts/contracts/access/Ownable2Step.sol";
 
-// TODO: do we need/want a pause on the oracle?
-// https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/Pausable.sol
-
 /// @title SuperstateOracle
 /// @author Jon Walch (Superstate) https://github.com/superstateinc
 /// @notice A contract that allows Superstate to price USTB by extrapolating previous prices forward in real time
