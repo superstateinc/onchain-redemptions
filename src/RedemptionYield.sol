@@ -50,7 +50,7 @@ contract RedemptionYield is Pausable {
     IComet public immutable COMPOUND;
 
     /// @notice Admin address with exclusive privileges for withdrawing tokens
-    address public immutable ADMIN;
+    address public immutable ADMIN; // TODO: use Ownable2Step
 
     /// @notice Value, in seconds, that determines if chainlink data is too old
     uint256 public maximumOracleDelay;
@@ -190,8 +190,9 @@ contract RedemptionYield is Pausable {
         (,, uint256 usdPerUstbChainlinkRaw) = _getChainlinkPrice();
         // divide a USDC amount by the USD per SUPERSTATE_TOKEN Chainlink price then scale back up to a SUPERSTATE_TOKEN amount
         // 1 cUSDC = 1 USDC
-        _superstateTokenAmount = (COMPOUND.balanceOf(address(this)) * CHAINLINK_FEED_PRECISION * SUPERSTATE_TOKEN_PRECISION)
-            / (usdPerUstbChainlinkRaw * USDC_PRECISION);
+        _superstateTokenAmount = (
+            COMPOUND.balanceOf(address(this)) * CHAINLINK_FEED_PRECISION * SUPERSTATE_TOKEN_PRECISION
+        ) / (usdPerUstbChainlinkRaw * USDC_PRECISION);
     }
 
     /// @notice The ```redeem``` function allows users to redeem SUPERSTATE_TOKEN for USDC at the current oracle price
@@ -205,8 +206,8 @@ contract RedemptionYield is Pausable {
         if (isBadData) revert BadChainlinkData();
 
         // converts from a SUPERSTATE_TOKEN amount to a USD amount, and then scales back up to a USDC amount
-        uint256 usdcOutAmount =
-            (superstateTokenInAmount * usdPerUstbChainlinkRaw * USDC_PRECISION) / (CHAINLINK_FEED_PRECISION * SUPERSTATE_TOKEN_PRECISION);
+        uint256 usdcOutAmount = (superstateTokenInAmount * usdPerUstbChainlinkRaw * USDC_PRECISION)
+            / (CHAINLINK_FEED_PRECISION * SUPERSTATE_TOKEN_PRECISION);
 
         if (COMPOUND.balanceOf(address(this)) < usdcOutAmount) revert InsufficientBalance();
 
@@ -214,7 +215,11 @@ contract RedemptionYield is Pausable {
         COMPOUND.withdrawTo({to: msg.sender, asset: address(USDC), amount: usdcOutAmount});
         ISuperstateToken(address(SUPERSTATE_TOKEN)).burn(superstateTokenInAmount);
 
-        emit Redeem({redeemer: msg.sender, superstateTokenInAmount: superstateTokenInAmount, usdcOutAmount: usdcOutAmount});
+        emit Redeem({
+            redeemer: msg.sender,
+            superstateTokenInAmount: superstateTokenInAmount,
+            usdcOutAmount: usdcOutAmount
+        });
     }
 
     /// @notice The ```withdraw``` function allows the admin to withdraw any type of ERC20

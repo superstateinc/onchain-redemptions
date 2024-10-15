@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.26;
 
-contract TestOracle {
+contract TestChainlinkDataFeedOracle {
     uint80 public roundId;
     int256 public answer;
     uint256 public startedAt;
