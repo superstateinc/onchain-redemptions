@@ -146,13 +146,16 @@ contract SuperstateOracle is AggregatorV3Interface, Ownable2Step {
     // TODO: notice
     // will give different prices for the same _roundId based on the block.timestamp
     // startedAt and updatedAt give the timestamp of the price
-    function getRoundData(uint80 _roundId)
+    // only gives latest price
+    function getRoundData(uint80)
         public
         view
         override
         returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)
     {
-        uint256 latestIndex = _roundId;
+        if (checkpoints.length < 2) revert CantGeneratePrice(); // need at least two rounds. i.e. 0 and 1
+
+        uint256 latestIndex = checkpoints.length - 1;
         uint128 nowTimestamp = uint128(block.timestamp);
 
         // We will only have one checkpoint that isn't effective yet the vast majority of the time
@@ -176,11 +179,11 @@ contract SuperstateOracle is AggregatorV3Interface, Ownable2Step {
             later_timestamp: later.timestamp
         });
 
-        roundId = _roundId;
+        roundId = uint80(latestIndex);
         answer = int256(uint256(realtime_navs));
         startedAt = nowTimestamp;
         updatedAt = nowTimestamp;
-        answeredInRound = _roundId;
+        answeredInRound = uint80(latestIndex);
     }
 
     function latestRoundData()
@@ -189,8 +192,6 @@ contract SuperstateOracle is AggregatorV3Interface, Ownable2Step {
         override
         returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)
     {
-        if (checkpoints.length < 2) revert CantGeneratePrice(); // need at least two rounds. i.e. 0 and 1
-
-        (roundId, answer, startedAt, updatedAt, answeredInRound) = getRoundData(uint80(checkpoints.length - 1));
+        (roundId, answer, startedAt, updatedAt, answeredInRound) = getRoundData(0);
     }
 }
