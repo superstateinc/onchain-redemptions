@@ -52,6 +52,9 @@ contract SuperstateOracle is AggregatorV3Interface, Ownable2Step {
     /// @dev Thrown when the latest checkpoint is too stale to use to price
     error StaleCheckpoint();
 
+    /// @dev Thrown when the function is not implemented
+    error NotImplemented();
+
     constructor(address initialOwner) Ownable(initialOwner) {
         // SUPERSTATE_TOKEN starts at $10.000000. An Oracle with 6 decimals would represent as 10_000_000.
         // This math will give us 7_000_000 or $7.000000.
@@ -144,11 +147,21 @@ contract SuperstateOracle is AggregatorV3Interface, Ownable2Step {
     }
 
     // TODO: notice
+    function getRoundData(uint80)
+        external
+        pure
+        override
+        returns (uint80, int256, uint256, uint256, uint80)
+    {
+        revert NotImplemented();
+    }
+
+    // TODO: notice
     // will give different prices for the same _roundId based on the block.timestamp
     // startedAt and updatedAt give the timestamp of the price
     // only gives latest price
-    function getRoundData(uint80)
-        public
+    function latestRoundData()
+        external
         view
         override
         returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)
@@ -184,14 +197,5 @@ contract SuperstateOracle is AggregatorV3Interface, Ownable2Step {
         startedAt = nowTimestamp;
         updatedAt = nowTimestamp;
         answeredInRound = uint80(latestIndex);
-    }
-
-    function latestRoundData()
-        external
-        view
-        override
-        returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)
-    {
-        (roundId, answer, startedAt, updatedAt, answeredInRound) = getRoundData(0);
     }
 }
