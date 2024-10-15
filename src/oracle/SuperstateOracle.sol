@@ -165,7 +165,7 @@ contract SuperstateOracle is AggregatorV3Interface, Ownable2Step {
 
         if (latestIndex == 0) revert CantGeneratePrice(); // need at least two rounds i.e. 0 and 1
         NavsCheckpoint memory later = checkpoints[latestIndex];
-        NavsCheckpoint memory early = checkpoints[latestIndex - 1];
+        NavsCheckpoint memory earlier = checkpoints[latestIndex - 1];
 
         if (nowTimestamp > later.effective_at + LATEST_CHECKPOINT_GOOD_THROUGH) {
             revert StaleCheckpoint();
@@ -173,8 +173,8 @@ contract SuperstateOracle is AggregatorV3Interface, Ownable2Step {
 
         uint128 realtime_navs = calculate_realtime_navs({
             unix_timestamp_to_price: nowTimestamp,
-            early_navs: early.navs,
-            early_timestamp: early.timestamp,
+            early_navs: earlier.navs,
+            early_timestamp: earlier.timestamp,
             later_navs: later.navs,
             later_timestamp: later.timestamp
         });
