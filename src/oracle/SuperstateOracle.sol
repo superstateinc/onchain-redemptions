@@ -143,6 +143,9 @@ contract SuperstateOracle is AggregatorV3Interface, Ownable2Step {
                 / (later_timestamp - early_timestamp);
     }
 
+    // TODO: notice
+    // will give different prices for the same _roundId based on the block.timestamp
+    // startedAt and updatedAt give the timestamp of the price
     function getRoundData(uint80 _roundId)
         public
         view
@@ -175,8 +178,8 @@ contract SuperstateOracle is AggregatorV3Interface, Ownable2Step {
 
         roundId = _roundId;
         answer = int256(uint256(realtime_navs));
-        startedAt = later.effective_at; // TODO: double check what we want
-        updatedAt = later.effective_at; // TODO: double check what we want
+        startedAt = nowTimestamp;
+        updatedAt = nowTimestamp;
         answeredInRound = _roundId;
     }
 
