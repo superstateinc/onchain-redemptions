@@ -46,7 +46,7 @@ contract RedemptionIdle is Pausable {
     IERC20 public immutable USDC;
 
     /// @notice Admin address with exclusive privileges for withdrawing tokens
-    address public immutable ADMIN;
+    address public immutable ADMIN; // TODO: use Ownable2Step
 
     /// @notice Value, in seconds, that determines if chainlink data is too old
     uint256 public maximumOracleDelay;
@@ -192,8 +192,8 @@ contract RedemptionIdle is Pausable {
         if (isBadData) revert BadChainlinkData();
 
         // converts from a SUPERSTATE_TOKEN amount to a USD amount, and then scales back up to a USDC amount
-        uint256 usdcOutAmount =
-            (superstateTokenInAmount * usdPerUstbChainlinkRaw * USDC_PRECISION) / (CHAINLINK_FEED_PRECISION * SUPERSTATE_TOKEN_PRECISION);
+        uint256 usdcOutAmount = (superstateTokenInAmount * usdPerUstbChainlinkRaw * USDC_PRECISION)
+            / (CHAINLINK_FEED_PRECISION * SUPERSTATE_TOKEN_PRECISION);
 
         if (USDC.balanceOf(address(this)) < usdcOutAmount) revert InsufficientBalance();
 
@@ -201,7 +201,11 @@ contract RedemptionIdle is Pausable {
         USDC.safeTransfer({to: msg.sender, value: usdcOutAmount});
         ISuperstateToken(address(SUPERSTATE_TOKEN)).burn(superstateTokenInAmount);
 
-        emit Redeem({redeemer: msg.sender, superstateTokenInAmount: superstateTokenInAmount, usdcOutAmount: usdcOutAmount});
+        emit Redeem({
+            redeemer: msg.sender,
+            superstateTokenInAmount: superstateTokenInAmount,
+            usdcOutAmount: usdcOutAmount
+        });
     }
 
     /// @notice The ```withdraw``` function allows the admin to withdraw any type of ERC20

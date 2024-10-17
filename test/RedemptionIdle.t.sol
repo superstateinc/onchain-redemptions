@@ -5,7 +5,7 @@ import {Test, console} from "forge-std/Test.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {Pausable} from "openzeppelin-contracts/contracts/utils/Pausable.sol";
 import {AllowList} from "ustb/src/AllowList.sol";
-import {TestOracle} from "./TestOracle.sol";
+import {TestChainlinkDataFeedOracle} from "./TestChainlinkDataFeedOracle.sol";
 import {RedemptionYield} from "../src/RedemptionYield.sol";
 import {ISuperstateToken} from "../src/ISuperstateToken.sol";
 import {IComet} from "../src/IComet.sol";
@@ -26,18 +26,17 @@ contract RedemptionIdleTest is Test {
 
     uint256 constant MAXIMUM_ORACLE_DELAY = 93_600;
 
-    TestOracle public oracle;
+    TestChainlinkDataFeedOracle public oracle;
     RedemptionYield public redemption;
 
     function setUp() public {
         vm.createSelectFork(vm.envString("ETH_RPC_URL"), 19_976_215);
 
         // roundId, answer, startedAt, updatedAt, answeredInRound
-        oracle = new TestOracle(1, 10_192_577, 1_716_994_000, 1_716_994_030, 1);
+        oracle = new TestChainlinkDataFeedOracle(1, 10_192_577, 1_716_994_000, 1_716_994_030, 1);
 
-        (address payable _address,,) = deployRedemptionIdle(
-            admin, address(SUPERSTATE_TOKEN), address(oracle), address(USDC), MAXIMUM_ORACLE_DELAY
-        );
+        (address payable _address,,) =
+            deployRedemptionIdle(admin, address(SUPERSTATE_TOKEN), address(oracle), address(USDC), MAXIMUM_ORACLE_DELAY);
 
         redemption = RedemptionYield(_address);
 
@@ -119,12 +118,24 @@ contract RedemptionIdleTest is Test {
         vm.startPrank(SUPERSTATE_TOKEN_HOLDER);
         SUPERSTATE_TOKEN.approve(address(redemption), superstateTokenAmount);
         vm.expectEmit(true, true, true, true);
-        emit ISuperstateToken.Transfer({from: SUPERSTATE_TOKEN_HOLDER, to: address(redemption), value: superstateTokenAmount});
+        emit ISuperstateToken.Transfer({
+            from: SUPERSTATE_TOKEN_HOLDER,
+            to: address(redemption),
+            value: superstateTokenAmount
+        });
         vm.expectEmit(true, true, true, true);
-        emit ISuperstateToken.Burn({burner: address(redemption), from: address(redemption), amount: superstateTokenAmount});
+        emit ISuperstateToken.Burn({
+            burner: address(redemption),
+            from: address(redemption),
+            amount: superstateTokenAmount
+        });
         vm.expectEmit(true, true, true, true);
         // ~1e13, the original USDC amount
-        emit RedemptionYield.Redeem({redeemer: SUPERSTATE_TOKEN_HOLDER, superstateTokenInAmount: superstateTokenAmount, usdcOutAmount: 9999999999994});
+        emit RedemptionYield.Redeem({
+            redeemer: SUPERSTATE_TOKEN_HOLDER,
+            superstateTokenInAmount: superstateTokenAmount,
+            usdcOutAmount: 9999999999994
+        });
         redemption.redeem(superstateTokenAmount);
         vm.stopPrank();
 
@@ -161,11 +172,21 @@ contract RedemptionIdleTest is Test {
         assertEq(SUPERSTATE_TOKEN.balanceOf(address(redemption)), 0, "Contract has 0 SUPERSTATE_TOKEN balance");
 
         assertEq(
-            redeemerUstbBalanceAfter, redeemerUstbBalanceBefore - superstateTokenRedeemAmount, "Redeemer has proper SUPERSTATE_TOKEN balance"
+            redeemerUstbBalanceAfter,
+            redeemerUstbBalanceBefore - superstateTokenRedeemAmount,
+            "Redeemer has proper SUPERSTATE_TOKEN balance"
         );
 
-        assertEq(redeemerUsdcBalanceAfter, USDC_AMOUNT - redemptionContractUsdcBalanceAfter, "Redeemer has proper USDC balance");
-        assertEq(redemptionContractUsdcBalanceAfter, USDC_AMOUNT - redeemerUsdcBalanceAfter, "Contract has proper USDC balance");
+        assertEq(
+            redeemerUsdcBalanceAfter,
+            USDC_AMOUNT - redemptionContractUsdcBalanceAfter,
+            "Redeemer has proper USDC balance"
+        );
+        assertEq(
+            redemptionContractUsdcBalanceAfter,
+            USDC_AMOUNT - redeemerUsdcBalanceAfter,
+            "Contract has proper USDC balance"
+        );
     }
 
     function testRedeemBadDataLowPriceFail() public {
@@ -239,7 +260,10 @@ contract RedemptionIdleTest is Test {
 
         hoax(admin);
         vm.expectEmit(true, true, true, true);
-        emit RedemptionYield.SetMaximumOracleDelay({oldMaxOracleDelay: MAXIMUM_ORACLE_DELAY, newMaxOracleDelay: newDelay});
+        emit RedemptionYield.SetMaximumOracleDelay({
+            oldMaxOracleDelay: MAXIMUM_ORACLE_DELAY,
+            newMaxOracleDelay: newDelay
+        });
         redemption.setMaximumOracleDelay(newDelay);
 
         assertEq(newDelay, redemption.maximumOracleDelay());

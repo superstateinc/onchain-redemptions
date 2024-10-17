@@ -9,7 +9,7 @@ optimizer = false
 # The number of optimizer runs
 optimizer_runs = 2_000 # TODO
 # Version to compile with
-solc_version = "0.8.26"
+solc_version = "0.8.28"
 
 # Contracts to track with --gas-report
 #gas_reports = []
