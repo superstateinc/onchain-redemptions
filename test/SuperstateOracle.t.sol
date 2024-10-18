@@ -159,7 +159,6 @@ contract SuperstateOracleTest is Test {
         assertEq(10_000_000, answer);
     }
 
-    // user flow, add two, go fast effective at, latestRound data work, add a third, not effective at same price, now after effective at new price
     function testLatestRoundDataRealData() public {
         vm.warp(1726779601);
 
