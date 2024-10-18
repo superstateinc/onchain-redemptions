@@ -175,6 +175,11 @@ contract SuperstateOracleTest is Test {
 
         (, int256 answer,,,) = oracle.latestRoundData();
         assertEq(10_382_109, answer);
+
+        vm.warp(1726866001 + oracle.CHECKPOINT_EXPIRATION_PERIOD() + 1);
+
+        vm.expectRevert(SuperstateOracle.StaleCheckpoint.selector);
+        oracle.latestRoundData();
     }
 
     function testAddCheckpoints() public {
