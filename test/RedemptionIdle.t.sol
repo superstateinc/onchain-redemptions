@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.26;
+pragma solidity ^0.8.28;
 
 import {Test, console} from "forge-std/Test.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
@@ -14,17 +14,17 @@ import {deployRedemptionIdle} from "../script/RedemptionIdle.s.sol";
 contract RedemptionIdleTest is Test {
     address public admin = address(this);
 
-    AllowList constant allowList = AllowList(0x42d75C8FdBBF046DF0Fe1Ff388DA16fF99dE8149);
-    address allowListAdmin = 0x8C7Db8A96d39F76D9f456db23d591C2FDd0e2F8a;
+    AllowList public constant allowList = AllowList(0x42d75C8FdBBF046DF0Fe1Ff388DA16fF99dE8149);
+    address public allowListAdmin = 0x8C7Db8A96d39F76D9f456db23d591C2FDd0e2F8a;
 
-    IERC20 constant SUPERSTATE_TOKEN = IERC20(0x43415eB6ff9DB7E26A15b704e7A3eDCe97d31C4e);
-    IERC20 constant USDC = IERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
-    address constant SUPERSTATE_TOKEN_HOLDER = 0xB8851D8fdd9a007A33f6b45BF602046644aBE81f;
+    IERC20 public constant SUPERSTATE_TOKEN = IERC20(0x43415eB6ff9DB7E26A15b704e7A3eDCe97d31C4e);
+    IERC20 public constant USDC = IERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
+    address public constant SUPERSTATE_TOKEN_HOLDER = 0xB8851D8fdd9a007A33f6b45BF602046644aBE81f;
 
-    uint256 constant USDC_AMOUNT = 1e13;
-    uint256 constant ENTITY_ID = 1;
+    uint256 public constant USDC_AMOUNT = 1e13;
+    uint256 public constant ENTITY_ID = 1;
 
-    uint256 constant MAXIMUM_ORACLE_DELAY = 93_600;
+    uint256 public constant MAXIMUM_ORACLE_DELAY = 93_600;
 
     TestChainlinkDataFeedOracle public oracle;
     RedemptionYield public redemption;
