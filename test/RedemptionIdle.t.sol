@@ -3,6 +3,7 @@ pragma solidity ^0.8.28;
 
 import {Test, console} from "forge-std/Test.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+import {Ownable} from "openzeppelin-contracts/contracts/access/Ownable.sol";
 import {Pausable} from "openzeppelin-contracts/contracts/utils/Pausable.sol";
 import {AllowList} from "ustb/src/AllowList.sol";
 import {TestChainlinkDataFeedOracle} from "./TestChainlinkDataFeedOracle.sol";
@@ -71,7 +72,7 @@ contract RedemptionIdleTest is Test {
 
     function testWithdrawNotAdmin() public {
         hoax(SUPERSTATE_TOKEN_HOLDER);
-        vm.expectRevert(RedemptionYield.Unauthorized.selector);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, SUPERSTATE_TOKEN_HOLDER));
         redemption.withdraw(address(USDC), admin, 1);
     }
 
@@ -273,7 +274,7 @@ contract RedemptionIdleTest is Test {
         uint256 newDelay = 1234567;
 
         hoax(SUPERSTATE_TOKEN_HOLDER);
-        vm.expectRevert(RedemptionYield.Unauthorized.selector);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, SUPERSTATE_TOKEN_HOLDER));
         redemption.setMaximumOracleDelay(newDelay);
     }
 

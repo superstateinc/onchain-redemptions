@@ -5,6 +5,8 @@ pragma solidity ^0.8.28;
 import {AggregatorV3Interface} from "chainlink/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {ERC20} from "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
+import {Ownable} from "openzeppelin-contracts/contracts/access/Ownable.sol";
+import {Ownable2Step} from "openzeppelin-contracts/contracts/access/Ownable2Step.sol";
 import {Pausable} from "openzeppelin-contracts/contracts/utils/Pausable.sol";
 import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ISuperstateToken} from "./ISuperstateToken.sol";
@@ -12,7 +14,7 @@ import {ISuperstateToken} from "./ISuperstateToken.sol";
 /// @title RedemptionIdle
 /// @author Jon Walch and Max Wolff (Superstate) https://github.com/superstateinc
 /// @notice A contract that allows Superstate Token holders to redeem their token for USDC, without deploying the idle USDC into lending protocols.
-contract RedemptionIdle is Pausable {
+contract RedemptionIdle is Pausable, Ownable2Step {
     using SafeERC20 for IERC20;
 
     /// @notice Decimals of USDC
@@ -45,9 +47,6 @@ contract RedemptionIdle is Pausable {
     /// @notice The USDC contract
     IERC20 public immutable USDC;
 
-    /// @notice Admin address with exclusive privileges for withdrawing tokens
-    address public immutable ADMIN; // TODO: use Ownable2Step
-
     /// @notice Value, in seconds, that determines if chainlink data is too old
     uint256 public maximumOracleDelay;
 
@@ -72,9 +71,6 @@ contract RedemptionIdle is Pausable {
     /// @dev Thrown when an argument is invalid
     error BadArgs();
 
-    /// @dev Thrown when a request is not sent by the authorized admin
-    error Unauthorized();
-
     /// @dev Thrown when there isn't enough token balance in the contract
     error InsufficientBalance();
 
@@ -82,12 +78,12 @@ contract RedemptionIdle is Pausable {
     error BadChainlinkData();
 
     constructor(
-        address _admin,
+        address _owner,
         address _superstateToken,
         address _superstateTokenChainlinkFeedAddress,
         address _usdc,
         uint256 _maximumOracleDelay
-    ) {
+    ) Ownable(_owner) {
         CHAINLINK_FEED_ADDRESS = _superstateTokenChainlinkFeedAddress;
         CHAINLINK_FEED_DECIMALS = AggregatorV3Interface(CHAINLINK_FEED_ADDRESS).decimals();
         CHAINLINK_FEED_PRECISION = 10 ** uint256(CHAINLINK_FEED_DECIMALS);
@@ -97,7 +93,6 @@ contract RedemptionIdle is Pausable {
 
         maximumOracleDelay = _maximumOracleDelay;
 
-        ADMIN = _admin;
         SUPERSTATE_TOKEN = IERC20(_superstateToken);
         USDC = IERC20(_usdc);
 
@@ -113,23 +108,19 @@ contract RedemptionIdle is Pausable {
         revert();
     }
 
-    function _requireAuthorized() internal view {
-        if (msg.sender != ADMIN) revert Unauthorized();
-    }
-
     /// @notice Invokes the {Pausable-_pause} internal function
-    /// @dev Can only be called by the admin
+    /// @dev Can only be called by the owner
     function pause() external {
-        _requireAuthorized();
+        _checkOwner();
         _requireNotPaused();
 
         _pause();
     }
 
     /// @notice Invokes the {Pausable-_unpause} internal function
-    /// @dev Can only be called by the admin
+    /// @dev Can only be called by the owner
     function unpause() external {
-        _requireAuthorized();
+        _checkOwner();
         _requirePaused();
 
         _unpause();
@@ -144,10 +135,10 @@ contract RedemptionIdle is Pausable {
     }
 
     /// @notice The ```setMaximumOracleDelay``` function sets the max oracle delay to determine if Chainlink data is stale
-    /// @dev Requires msg.sender to be the admin address
+    /// @dev Requires msg.sender to be the owner address
     /// @param _newMaxOracleDelay The new max oracle delay
     function setMaximumOracleDelay(uint256 _newMaxOracleDelay) external {
-        _requireAuthorized();
+        _checkOwner();
         _setMaximumOracleDelay(_newMaxOracleDelay);
     }
 
@@ -208,13 +199,13 @@ contract RedemptionIdle is Pausable {
         });
     }
 
-    /// @notice The ```withdraw``` function allows the admin to withdraw any type of ERC20
-    /// @dev Requires msg.sender to be the admin address
+    /// @notice The ```withdraw``` function allows the owner to withdraw any type of ERC20
+    /// @dev Requires msg.sender to be the owner address
     /// @param _token The address of the token to withdraw
     /// @param to The address where the tokens are going
     /// @param amount The amount of `_token` to withdraw
     function withdraw(address _token, address to, uint256 amount) external {
-        _requireAuthorized();
+        _checkOwner();
         if (amount == 0) revert BadArgs();
 
         IERC20 token = IERC20(_token);
