@@ -13,9 +13,6 @@ import {deployRedemptionYield} from "../script/RedemptionYield.s.sol";
 import {SuperstateOracle} from "../src/oracle/SuperstateOracle.sol";
 import {deploySuperstateOracle} from "../script/SuperstateOracle.s.sol";
 
-import {console} from "forge-std/console.sol";
-
-
 contract RedemptionYieldTest is Test {
     address public owner = address(this);
 
