@@ -12,6 +12,9 @@ import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/Safe
 import {ISuperstateToken} from "./ISuperstateToken.sol";
 import {IComet} from "./IComet.sol";
 
+import {console} from "forge-std/console.sol";
+
+
 /// @title RedemptionYield
 /// @author Jon Walch and Max Wolff (Superstate) https://github.com/superstateinc
 /// @notice A contract that allows Superstate token holders to redeem their Superstate token for USDC, and deploys the idle USDC into lending protocols
