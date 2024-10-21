@@ -2,6 +2,8 @@
 
 pragma solidity ^0.8.28;
 
+import {console} from "forge-std/console.sol";
+
 import {AggregatorV3Interface} from "chainlink/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 import {Ownable} from "openzeppelin-contracts/contracts/access/Ownable.sol";
 import {Ownable2Step} from "openzeppelin-contracts/contracts/access/Ownable2Step.sol";
@@ -198,11 +200,6 @@ contract SuperstateOracle is AggregatorV3Interface, Ownable2Step {
         revert NotImplemented();
     }
 
-    // TODO: notice
-    // will give different prices for the same _roundId based on the block.timestamp
-    // startedAt and updatedAt give the timestamp of the price
-    // only gives latest price
-
     /// @notice Retrieves the latest NAV/S real-time price data
     /// @dev Calculates the current NAV/S based on the two most recent valid checkpoints
     /// @return roundId The ID of the latest round
@@ -222,7 +219,7 @@ contract SuperstateOracle is AggregatorV3Interface, Ownable2Step {
         uint128 nowTimestamp = uint128(block.timestamp);
 
         // We will only have one checkpoint that isn't effective yet the vast majority of the time
-        while (latestIndex != 0 && checkpoints[latestIndex].effectiveAt > nowTimestamp) {
+        while (checkpoints[latestIndex].effectiveAt > nowTimestamp) {
             latestIndex -= 1;
             if (latestIndex == 0) revert CantGeneratePrice(); // need at least two rounds i.e. 0 and 1
         }
