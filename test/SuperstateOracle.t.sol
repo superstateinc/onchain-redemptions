@@ -199,4 +199,32 @@ contract SuperstateOracleTest is Test {
         hoax(owner);
         oracle.addCheckpoints(checkpoints);
     }
+
+    function testLatestRoundDataEffectiveAtThirdCheckpoint() public {
+        vm.warp(1726779601);
+
+        hoax(owner);
+        oracle.addCheckpoint(1726779600, 1726779601, 10_374_862, false);
+
+        vm.warp(1726866001);
+
+        hoax(owner);
+        oracle.addCheckpoint(uint64(1726866000), 1726866001, 10_379_322, false);
+
+        vm.warp(1726920000);
+
+        (, int256 answer,,,) = oracle.latestRoundData();
+        assertEq(10_382_109, answer);
+
+        hoax(owner);
+        oracle.addCheckpoint(uint64(1726920000 - 1), 1726920000 + 1, 500_000_000, false);
+
+        (, int256 answer2,,,) = oracle.latestRoundData();
+        assertEq(10_382_109, answer2);
+
+        vm.warp(1726920000 + 1); // price changes now since new crazy high checkpoint is now effective_at
+
+        (, int256 answer3,,,) = oracle.latestRoundData();
+        assertEq(500_018_134, answer3);
+    }
 }
