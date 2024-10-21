@@ -6,14 +6,15 @@ import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {Ownable} from "openzeppelin-contracts/contracts/access/Ownable.sol";
 import {Pausable} from "openzeppelin-contracts/contracts/utils/Pausable.sol";
 import {AllowList} from "ustb/src/AllowList.sol";
-import {TestChainlinkDataFeedOracle} from "./TestChainlinkDataFeedOracle.sol";
 import {RedemptionYield} from "../src/RedemptionYield.sol";
 import {ISuperstateToken} from "../src/ISuperstateToken.sol";
 import {IComet} from "../src/IComet.sol";
 import {deployRedemptionIdle} from "../script/RedemptionIdle.s.sol";
+import {SuperstateOracle} from "../src/oracle/SuperstateOracle.sol";
+import {deploySuperstateOracle} from "../script/SuperstateOracle.s.sol";
 
 contract RedemptionIdleTest is Test {
-    address public admin = address(this);
+    address public owner = address(this);
 
     AllowList public constant allowList = AllowList(0x42d75C8FdBBF046DF0Fe1Ff388DA16fF99dE8149);
     address public allowListAdmin = 0x8C7Db8A96d39F76D9f456db23d591C2FDd0e2F8a;
@@ -27,17 +28,35 @@ contract RedemptionIdleTest is Test {
 
     uint256 public constant MAXIMUM_ORACLE_DELAY = 93_600;
 
-    TestChainlinkDataFeedOracle public oracle;
+    SuperstateOracle public oracle;
     RedemptionYield public redemption;
 
     function setUp() public {
         vm.createSelectFork(vm.envString("ETH_RPC_URL"), 19_976_215);
+        vm.roll(20_993_400);
 
-        // roundId, answer, startedAt, updatedAt, answeredInRound
-        oracle = new TestChainlinkDataFeedOracle(1, 10_192_577, 1_716_994_000, 1_716_994_030, 1);
+        (address payable _addressOracle,,) = deploySuperstateOracle(owner, address(SUPERSTATE_TOKEN));
+
+        oracle = SuperstateOracle(_addressOracle);
+
+        vm.warp(1726_779_601);
+
+        hoax(owner);
+        oracle.addCheckpoint(1726779600, 1726779601, 10_374_862, false);
+
+        vm.warp(1726866001);
+
+        hoax(owner);
+        oracle.addCheckpoint(uint64(1726866000), 1726866001, 10_379_322, false);
+        // result = laterCheckpointNavs + ((laterCheckpointNavs - earlierCheckpointNavs) * (targetTimestamp - laterCheckpointTimestamp)) / (laterCheckpointTimestamp - earlierCheckpointTimestamp)
+
+        // 4460 diff between navs = 1726866000 - 1726779600
+        // 86,400 seconds between checkpoints
+        // diff between 
+        // 10379322 + 4460* 1 / 86,400 = 10,379,322 interpolated nav/s
 
         (address payable _address,,) =
-            deployRedemptionIdle(admin, address(SUPERSTATE_TOKEN), address(oracle), address(USDC), MAXIMUM_ORACLE_DELAY);
+            deployRedemptionIdle(owner, address(SUPERSTATE_TOKEN), address(oracle), address(USDC), MAXIMUM_ORACLE_DELAY);
 
         redemption = RedemptionYield(_address);
 
@@ -62,30 +81,30 @@ contract RedemptionIdleTest is Test {
     function testWithdrawUsdc() public {
         deal(address(USDC), address(redemption), USDC_AMOUNT);
 
-        hoax(admin);
+        hoax(owner);
         vm.expectEmit(true, true, true, true);
-        emit RedemptionYield.Withdraw({token: address(USDC), withdrawer: admin, to: admin, amount: USDC_AMOUNT});
-        redemption.withdraw(address(USDC), admin, USDC_AMOUNT);
+        emit RedemptionYield.Withdraw({token: address(USDC), withdrawer: owner, to: owner, amount: USDC_AMOUNT});
+        redemption.withdraw(address(USDC), owner, USDC_AMOUNT);
 
-        assertEq(USDC.balanceOf(admin), USDC_AMOUNT);
+        assertEq(USDC.balanceOf(owner), USDC_AMOUNT);
     }
 
     function testWithdrawNotAdmin() public {
         hoax(SUPERSTATE_TOKEN_HOLDER);
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, SUPERSTATE_TOKEN_HOLDER));
-        redemption.withdraw(address(USDC), admin, 1);
+        redemption.withdraw(address(USDC), owner, 1);
     }
 
     function testWithdrawAmountZero() public {
-        hoax(admin);
+        hoax(owner);
         vm.expectRevert(RedemptionYield.BadArgs.selector);
-        redemption.withdraw(address(USDC), admin, 0);
+        redemption.withdraw(address(USDC), owner, 0);
     }
 
     function testWithdrawBalanceZero() public {
-        hoax(admin);
+        hoax(owner);
         vm.expectRevert(RedemptionYield.InsufficientBalance.selector);
-        redemption.withdraw(address(SUPERSTATE_TOKEN), admin, 1);
+        redemption.withdraw(address(SUPERSTATE_TOKEN), owner, 1);
     }
 
     function testRedeemAmountTooLarge() public {
@@ -106,12 +125,12 @@ contract RedemptionIdleTest is Test {
         uint256 superstateTokenAmount = redemption.maxUstbRedemptionAmount();
 
         // usdc balance * 1e6 (chainlink precision) * 1e6 (superstateToken precision) / feed price * 1e6 (usdc precision)
-        // 1e13 * 1e6 / 10192577
-        assertEq(superstateTokenAmount, 981106152055);
+        // 1e13 * 1e6 / 10,379,322(real-time NAV/S price)
+        assertEq(superstateTokenAmount, 963454067616);
 
         assertGe(superstateTokenBalance, superstateTokenAmount, "Don't redeem more than holder has");
 
-        vm.startPrank(admin);
+        vm.startPrank(owner);
         redemption.pause();
         redemption.unpause();
         vm.stopPrank();
@@ -135,7 +154,7 @@ contract RedemptionIdleTest is Test {
         emit RedemptionYield.Redeem({
             redeemer: SUPERSTATE_TOKEN_HOLDER,
             superstateTokenInAmount: superstateTokenAmount,
-            usdcOutAmount: 9999999999994
+            usdcOutAmount: 9999999999996
         });
         redemption.redeem(superstateTokenAmount);
         vm.stopPrank();
@@ -148,7 +167,7 @@ contract RedemptionIdleTest is Test {
 
         assertEq(SUPERSTATE_TOKEN.balanceOf(address(redemption)), 0);
 
-        assertEq(redemptionContractUsdcBalance, 6);
+        assertEq(redemptionContractUsdcBalance, 4);
         assertEq(redemptionContractUsdcBalance, USDC_AMOUNT - redeemerUsdcBalance);
     }
 
@@ -190,63 +209,18 @@ contract RedemptionIdleTest is Test {
         );
     }
 
-    function testRedeemBadDataLowPriceFail() public {
-        (uint80 _roundId,, uint256 _startedAt, uint256 _updatedAt,) = oracle.latestRoundData();
-        oracle.update({
-            _roundId: _roundId + 1,
-            _answer: 6_999_999,
-            _startedAt: _startedAt + 86_400,
-            _updatedAt: _updatedAt + 86_400,
-            _answeredInRound: _roundId + 1
-        });
-
-        assertEq(USDC.balanceOf(SUPERSTATE_TOKEN_HOLDER), 0);
-
-        uint256 superstateTokenAmount = redemption.maxUstbRedemptionAmount();
-
-        vm.startPrank(SUPERSTATE_TOKEN_HOLDER);
-        SUPERSTATE_TOKEN.approve(address(redemption), superstateTokenAmount);
-        vm.expectRevert(RedemptionYield.BadChainlinkData.selector);
-        redemption.redeem(superstateTokenAmount);
-        vm.stopPrank();
-    }
-
-    function testRedeemMinimumPrice() public {
-        vm.warp(block.timestamp + 86_400);
-
-        (uint80 _roundId,,,,) = oracle.latestRoundData();
-        oracle.update({
-            _roundId: _roundId + 1,
-            _answer: 7_000_000,
-            _startedAt: block.timestamp,
-            _updatedAt: block.timestamp,
-            _answeredInRound: _roundId + 1
-        });
-
-        assertEq(USDC.balanceOf(SUPERSTATE_TOKEN_HOLDER), 0);
-
-        uint256 superstateTokenBalance = SUPERSTATE_TOKEN.balanceOf(SUPERSTATE_TOKEN_HOLDER);
-
-        vm.startPrank(SUPERSTATE_TOKEN_HOLDER);
-        SUPERSTATE_TOKEN.approve(address(redemption), superstateTokenBalance);
-        redemption.redeem(superstateTokenBalance);
-        vm.stopPrank();
-    }
-
     function testRedeemBadDataOldDataFail() public {
-        vm.warp(block.timestamp + MAXIMUM_ORACLE_DELAY);
+        vm.warp(block.timestamp + 5 days + 1);
 
         assertEq(USDC.balanceOf(SUPERSTATE_TOKEN_HOLDER), 0);
 
-        uint256 superstateTokenBalance = SUPERSTATE_TOKEN.balanceOf(SUPERSTATE_TOKEN_HOLDER);
-        uint256 superstateTokenAmount = redemption.maxUstbRedemptionAmount();
-
-        assertGe(superstateTokenBalance, superstateTokenAmount, "Don't redeem more than holder has");
+        vm.expectRevert(SuperstateOracle.StaleCheckpoint.selector);
+        redemption.maxUstbRedemptionAmount();
 
         vm.startPrank(SUPERSTATE_TOKEN_HOLDER);
-        SUPERSTATE_TOKEN.approve(address(redemption), superstateTokenAmount);
-        vm.expectRevert(RedemptionYield.BadChainlinkData.selector);
-        redemption.redeem(superstateTokenAmount);
+        SUPERSTATE_TOKEN.approve(address(redemption), 100);
+        vm.expectRevert(SuperstateOracle.StaleCheckpoint.selector);
+        redemption.redeem(100);
         vm.stopPrank();
     }
 
@@ -259,7 +233,7 @@ contract RedemptionIdleTest is Test {
     function testAdminSetOracleDelay() public {
         uint256 newDelay = 1234567;
 
-        hoax(admin);
+        hoax(owner);
         vm.expectEmit(true, true, true, true);
         emit RedemptionYield.SetMaximumOracleDelay({
             oldMaxOracleDelay: MAXIMUM_ORACLE_DELAY,
@@ -281,13 +255,13 @@ contract RedemptionIdleTest is Test {
     function testAdminSetOracleDelaySameFail() public {
         uint256 oldDelay = redemption.maximumOracleDelay();
 
-        hoax(admin);
+        hoax(owner);
         vm.expectRevert(RedemptionYield.BadArgs.selector);
         redemption.setMaximumOracleDelay(oldDelay);
     }
 
     function testCantRedeemPaused() public {
-        hoax(admin);
+        hoax(owner);
         redemption.pause();
 
         hoax(SUPERSTATE_TOKEN_HOLDER);
@@ -296,16 +270,16 @@ contract RedemptionIdleTest is Test {
     }
 
     function testCantPauseAlreadyPaused() public {
-        hoax(admin);
+        hoax(owner);
         redemption.pause();
 
-        hoax(admin);
+        hoax(owner);
         vm.expectRevert(Pausable.EnforcedPause.selector);
         redemption.pause();
     }
 
     function testCantUnpauseAlreadyUnpaused() public {
-        hoax(admin);
+        hoax(owner);
         vm.expectRevert(Pausable.ExpectedPause.selector);
         redemption.unpause();
     }
