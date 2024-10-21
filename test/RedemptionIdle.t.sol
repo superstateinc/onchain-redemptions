@@ -119,7 +119,7 @@ contract RedemptionIdleTest is Test {
         uint256 superstateTokenAmount = redemption.maxUstbRedemptionAmount();
 
         // usdc balance * 1e6 (chainlink precision) * 1e6 (superstateToken precision) / feed price * 1e6 (usdc precision)
-        // 1e13 * 1e6 / (real-time NAV/S price)
+        // 1e13 * 1e6 / 10,379,322(real-time NAV/S price)
         assertEq(superstateTokenAmount, 963454067616);
 
         assertGe(superstateTokenBalance, superstateTokenAmount, "Don't redeem more than holder has");
