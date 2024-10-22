@@ -1,8 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-
 pragma solidity ^0.8.28;
-
-import {console} from "forge-std/console.sol";
 
 import {AggregatorV3Interface} from "chainlink/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 import {Ownable} from "openzeppelin-contracts/contracts/access/Ownable.sol";
