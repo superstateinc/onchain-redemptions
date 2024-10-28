@@ -184,9 +184,25 @@ contract SuperstateOracle is AggregatorV3Interface, Ownable2Step {
         uint128 laterCheckpointNavs,
         uint128 laterCheckpointTimestamp
     ) public pure returns (uint128 answer) {
-        answer = laterCheckpointNavs
-            + ((laterCheckpointNavs - earlierCheckpointNavs) * (targetTimestamp - laterCheckpointTimestamp))
-                / (laterCheckpointTimestamp - earlierCheckpointTimestamp);
+        uint128 timeSinceLastNav = targetTimestamp - laterCheckpointTimestamp;
+        uint128 timeBetweenNavs = laterCheckpointTimestamp - earlierCheckpointTimestamp;
+
+        uint128 navDelta;
+        if (laterCheckpointNavs >= earlierCheckpointNavs) {
+            navDelta = laterCheckpointNavs - earlierCheckpointNavs;
+        } else {
+            navDelta = earlierCheckpointNavs - laterCheckpointNavs;
+        }
+
+        uint128 extrapolatedChange = (navDelta * timeSinceLastNav) / timeBetweenNavs;
+
+        if (laterCheckpointNavs >= earlierCheckpointNavs) {
+            // Price is increasing or flat, this branch should almost always be taken
+            answer = laterCheckpointNavs + extrapolatedChange;
+        } else {
+            // Price is decreasing, very rare, we might not ever see this happen
+            answer = laterCheckpointNavs - extrapolatedChange;
+        }
     }
 
     /// @notice Placeholder function to comply with the Chainlink AggregatorV3Interface
