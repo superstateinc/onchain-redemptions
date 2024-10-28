@@ -185,17 +185,17 @@ contract SuperstateOracleTest is Test {
         vm.warp(1726779601);
 
         hoax(owner);
-        oracle.addCheckpoint(1726779600, 1726779601, 10_379_322, false);  // Swapped: was 10_374_862
+        oracle.addCheckpoint(1726779600, 1726779601, 10_379_322, false); // Swapped: was 10_374_862
 
         vm.warp(1726866001);
 
         hoax(owner);
-        oracle.addCheckpoint(uint64(1726866000), 1726866001, 10_374_862, false);  // Swapped: was 10_379_322
+        oracle.addCheckpoint(uint64(1726866000), 1726866001, 10_374_862, false); // Swapped: was 10_379_322
 
         vm.warp(1726920000);
 
         (, int256 answer,,,) = oracle.latestRoundData();
-        assertEq(10_372_075, answer);  // New expected value for decreasing case
+        assertEq(10_372_075, answer); // New expected value for decreasing case
 
         vm.warp(1726866001 + oracle.CHECKPOINT_EXPIRATION_PERIOD() + 1);
 
