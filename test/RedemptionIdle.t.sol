@@ -52,7 +52,7 @@ contract RedemptionIdleTest is Test {
 
         // 4460 diff between navs = 1726866000 - 1726779600
         // 86,400 seconds between checkpoints
-        // diff between 
+        // diff between
         // 10379322 + 4460* 1 / 86,400 = 10,379,322 interpolated nav/s
 
         (address payable _address,,) =
