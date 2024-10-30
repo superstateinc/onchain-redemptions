@@ -35,7 +35,7 @@ contract RedemptionIdleTest is Test {
         vm.createSelectFork(vm.envString("ETH_RPC_URL"), 19_976_215);
         vm.roll(20_993_400);
 
-        (address payable _addressOracle,,) = deploySuperstateOracle(owner, address(SUPERSTATE_TOKEN));
+        (address payable _addressOracle,,) = deploySuperstateOracle(owner, address(SUPERSTATE_TOKEN), 1_000_000);
 
         oracle = SuperstateOracle(_addressOracle);
 

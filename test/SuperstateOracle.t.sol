@@ -20,7 +20,7 @@ contract SuperstateOracleTest is Test {
         vm.warp(1_729_266_022);
         vm.roll(20_993_400);
 
-        (address payable _address,,) = deploySuperstateOracle(owner, address(USTB));
+        (address payable _address,,) = deploySuperstateOracle(owner, address(USTB), 1_000_000);
 
         oracle = SuperstateOracle(_address);
     }
@@ -48,6 +48,16 @@ contract SuperstateOracleTest is Test {
 
     function testOwner() public view {
         assertEq(oracle.owner(), owner);
+    }
+
+    function testMaximumAcceptablePriceDelta() public view {
+        assertEq(oracle.maximumAcceptablePriceDelta(), 1_000_000);
+    }
+
+    function testSetMaximumAcceptablePriceWrongOwner() public {
+        hoax(bob);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, bob));
+        oracle.setMaximumAcceptablePriceDelta(0);
     }
 
     function testAddCheckpointWrongOwner() public {
@@ -282,5 +292,13 @@ contract SuperstateOracleTest is Test {
 
         (, int256 answer3,,,) = oracle.latestRoundData();
         assertEq(10_479_325, answer3);
+    }
+
+    function testSetMaximumAcceptablePrice() public {
+        assertEq(1_000_000, oracle.maximumAcceptablePriceDelta());
+        
+        oracle.setMaximumAcceptablePriceDelta(500_000);
+
+        assertEq(500_000, oracle.maximumAcceptablePriceDelta());
     }
 }

@@ -22,9 +22,6 @@ contract SuperstateOracle is AggregatorV3Interface, Ownable2Step {
     /// @notice Number of days in seconds to keep extrapolating from latest checkpoint
     uint256 public constant CHECKPOINT_EXPIRATION_PERIOD = 5 * 24 * 60 * 60; // 5 days in seconds
 
-    /// @notice Highest accepted delta between new Net Asset Value per Share price and the last one
-    uint256 public immutable MAXIMUM_ACCEPTABLE_PRICE_DELTA;
-
     /// @notice The address of the USTB token proxy contract that this oracle prices
     address public immutable USTB_TOKEN_PROXY_ADDRESS;
 
@@ -34,6 +31,9 @@ contract SuperstateOracle is AggregatorV3Interface, Ownable2Step {
     /// @notice Version number of SuperstateOracle
     uint8 public constant VERSION = 1;
 
+    /// @notice Highest accepted delta between new Net Asset Value per Share price and the last one
+    uint256 public maximumAcceptablePriceDelta;
+
     /// @notice Offchain Net Asset Value per Share checkpoints
     NavsCheckpoint[] public checkpoints;
 
@@ -42,6 +42,14 @@ contract SuperstateOracle is AggregatorV3Interface, Ownable2Step {
     /// @param effectiveAt When this checkpoint starts being used for pricing
     /// @param navs The Net Asset Value per Share (NAV/S) price (i.e. 10123456 is 10.123456)
     event NewCheckpoint(uint64 timestamp, uint64 effectiveAt, uint128 navs);
+
+    /// @notice The ```UpdatedMaximumAcceptablePriceDelta``` event is emitted when a new checkpoint is added
+    /// @param oldDelta The old delta value
+    /// @param newDelta The new delta value
+    event SetMaximumAcceptablePriceDelta(uint256 oldDelta, uint256 newDelta);
+
+    /// @dev Thrown when an argument to a function is not acceptable
+    error BadArgs();
 
     /// @dev Thrown when there aren't at least 2 checkpoints where block.timestamp is after the effectiveAt timestamps for both
     error CantGeneratePrice();
@@ -73,10 +81,9 @@ contract SuperstateOracle is AggregatorV3Interface, Ownable2Step {
     /// @dev Thrown when the timestamp argument is chronologically invalid
     error TimestampNotChronological();
 
-    constructor(address initialOwner, address ustbTokenProxy) Ownable(initialOwner) {
-        // Increase/decrease of greater than 1 dollar in a day is likely wrong for USTB
-        MAXIMUM_ACCEPTABLE_PRICE_DELTA = 1_000_000;
+    constructor(address initialOwner, address ustbTokenProxy, uint256 _maximumAcceptablePriceDelta) Ownable(initialOwner) {
         USTB_TOKEN_PROXY_ADDRESS = ustbTokenProxy;
+        _setMaximumAcceptablePriceDelta(_maximumAcceptablePriceDelta);
     }
 
     function decimals() external pure override returns (uint8) {
@@ -89,6 +96,21 @@ contract SuperstateOracle is AggregatorV3Interface, Ownable2Step {
 
     function version() external pure override returns (uint256) {
         return VERSION;
+    }
+
+    function _setMaximumAcceptablePriceDelta(uint256 _newMaximumAcceptablePriceDelta) internal {
+        if (maximumAcceptablePriceDelta == _newMaximumAcceptablePriceDelta) revert BadArgs();
+        emit SetMaximumAcceptablePriceDelta({oldDelta: maximumAcceptablePriceDelta, newDelta: _newMaximumAcceptablePriceDelta});
+        maximumAcceptablePriceDelta = _newMaximumAcceptablePriceDelta;
+    }
+    /**
+     * @notice The ```setMaximumAcceptablePriceDelta``` function sets the max acceptable price delta between the last NAV/S price and the new one being added
+     * @dev Requires msg.sender to be the owner address
+     * @param _newMaximumAcceptablePriceDelta The new max acceptable price delta
+     */
+    function setMaximumAcceptablePriceDelta(uint256 _newMaximumAcceptablePriceDelta) external {
+        _checkOwner();
+        _setMaximumAcceptablePriceDelta(_newMaximumAcceptablePriceDelta);
     }
 
     /// @notice Adds a new NAV/S checkpoint
@@ -113,8 +135,8 @@ contract SuperstateOracle is AggregatorV3Interface, Ownable2Step {
         // Can only add new checkpoints going chronologically forward
         if (checkpoints.length > 0) {
             NavsCheckpoint memory latest = checkpoints[checkpoints.length - 1];
-            if (navs > latest.navs + MAXIMUM_ACCEPTABLE_PRICE_DELTA) revert NetAssetValuePerShareTooHigh();
-            if (navs < latest.navs - MAXIMUM_ACCEPTABLE_PRICE_DELTA) revert NetAssetValuePerShareTooLow();
+            if (navs > latest.navs + maximumAcceptablePriceDelta) revert NetAssetValuePerShareTooHigh();
+            if (navs < latest.navs - maximumAcceptablePriceDelta) revert NetAssetValuePerShareTooLow();
 
             if (latest.timestamp >= timestamp) {
                 revert TimestampNotChronological();
