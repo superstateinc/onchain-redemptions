@@ -20,7 +20,7 @@ contract SuperstateOracleTest is Test {
         vm.warp(1_729_266_022);
         vm.roll(20_993_400);
 
-        (address payable _address,,) = deploySuperstateOracle(owner, address(USTB));
+        (address payable _address,,) = deploySuperstateOracle(owner, address(USTB), 1_000_000);
 
         oracle = SuperstateOracle(_address);
     }
@@ -48,6 +48,16 @@ contract SuperstateOracleTest is Test {
 
     function testOwner() public view {
         assertEq(oracle.owner(), owner);
+    }
+
+    function testMaximumAcceptablePriceDelta() public view {
+        assertEq(oracle.maximumAcceptablePriceDelta(), 1_000_000);
+    }
+
+    function testSetMaximumAcceptablePriceWrongOwner() public {
+        hoax(bob);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, bob));
+        oracle.setMaximumAcceptablePriceDelta(0);
     }
 
     function testAddCheckpointWrongOwner() public {
@@ -79,12 +89,6 @@ contract SuperstateOracleTest is Test {
         hoax(owner);
         vm.expectRevert(SuperstateOracle.EffectiveAtInvalid.selector);
         oracle.addCheckpoint(uint64(block.timestamp - 100), uint64(block.timestamp - 1), 10_000_000, false);
-    }
-
-    function testAddCheckpointNetAssetValuePerShareInvalid() public {
-        hoax(owner);
-        vm.expectRevert(SuperstateOracle.NetAssetValuePerShareInvalid.selector);
-        oracle.addCheckpoint(uint64(block.timestamp - 100), uint64(block.timestamp + 100), 6_999_999, false);
     }
 
     function testAddCheckpointTimestampNotChronological() public {
@@ -185,6 +189,8 @@ contract SuperstateOracleTest is Test {
         vm.warp(1726779601);
 
         hoax(owner);
+        vm.expectEmit(true, true, true, true);
+        emit SuperstateOracle.NewCheckpoint(1726779600, 1726779601, 10_379_322);
         oracle.addCheckpoint(1726779600, 1726779601, 10_379_322, false); // Swapped: was 10_374_862
 
         vm.warp(1726866001);
@@ -215,10 +221,50 @@ contract SuperstateOracleTest is Test {
         checkpoints[1] = SuperstateOracle.NavsCheckpoint({
             timestamp: uint64(block.timestamp - 50),
             effectiveAt: uint64(block.timestamp + 1 days),
-            navs: 11_000_000
+            navs: 10_100_000
         });
 
         hoax(owner);
+        oracle.addCheckpoints(checkpoints);
+    }
+
+    function testAddCheckpointsFailNavsTooHigh() public {
+        SuperstateOracle.NavsCheckpoint[] memory checkpoints = new SuperstateOracle.NavsCheckpoint[](2);
+
+        checkpoints[0] = SuperstateOracle.NavsCheckpoint({
+            timestamp: uint64(block.timestamp - 100),
+            effectiveAt: uint64(block.timestamp + 1 hours),
+            navs: 10_000_000
+        });
+
+        checkpoints[1] = SuperstateOracle.NavsCheckpoint({
+            timestamp: uint64(block.timestamp - 50),
+            effectiveAt: uint64(block.timestamp + 1 days),
+            navs: 11_000_001
+        });
+
+        hoax(owner);
+        vm.expectRevert(SuperstateOracle.NetAssetValuePerShareTooHigh.selector);
+        oracle.addCheckpoints(checkpoints);
+    }
+
+    function testAddCheckpointsFailNavsTooLow() public {
+        SuperstateOracle.NavsCheckpoint[] memory checkpoints = new SuperstateOracle.NavsCheckpoint[](2);
+
+        checkpoints[0] = SuperstateOracle.NavsCheckpoint({
+            timestamp: uint64(block.timestamp - 100),
+            effectiveAt: uint64(block.timestamp + 1 hours),
+            navs: 10_000_000
+        });
+
+        checkpoints[1] = SuperstateOracle.NavsCheckpoint({
+            timestamp: uint64(block.timestamp - 50),
+            effectiveAt: uint64(block.timestamp + 1 days),
+            navs: 8_999_999
+        });
+
+        hoax(owner);
+        vm.expectRevert(SuperstateOracle.NetAssetValuePerShareTooLow.selector);
         oracle.addCheckpoints(checkpoints);
     }
 
@@ -239,7 +285,7 @@ contract SuperstateOracleTest is Test {
         assertEq(10_382_109, answer);
 
         hoax(owner);
-        oracle.addCheckpoint(uint64(1726920000 - 1), 1726920000 + 1, 500_000_000, false);
+        oracle.addCheckpoint(uint64(1726920000 - 1), 1726920000 + 1, 10_479_322, false);
 
         (, int256 answer2,,,) = oracle.latestRoundData();
         assertEq(10_382_109, answer2);
@@ -247,6 +293,16 @@ contract SuperstateOracleTest is Test {
         vm.warp(1726920000 + 1); // price changes now since new crazy high checkpoint is now effective_at
 
         (, int256 answer3,,,) = oracle.latestRoundData();
-        assertEq(500_018_134, answer3);
+        assertEq(10_479_325, answer3);
+    }
+
+    function testSetMaximumAcceptablePrice() public {
+        assertEq(1_000_000, oracle.maximumAcceptablePriceDelta());
+
+        vm.expectEmit(true, true, true, true);
+        emit SuperstateOracle.SetMaximumAcceptablePriceDelta(1_000_000, 500_000);
+        oracle.setMaximumAcceptablePriceDelta(500_000);
+
+        assertEq(500_000, oracle.maximumAcceptablePriceDelta());
     }
 }

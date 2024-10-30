@@ -4,12 +4,12 @@ pragma solidity ^0.8.28;
 import {Script, console} from "forge-std/Script.sol";
 import {SuperstateOracle} from "../src/oracle/SuperstateOracle.sol";
 
-function deploySuperstateOracle(address initialOwner, address ustb)
+function deploySuperstateOracle(address initialOwner, address ustb, uint256 maximumAcceptablePriceDelta)
     returns (address payable _address, bytes memory _constructorParams, string memory _contractName)
 {
     _constructorParams = abi.encode(initialOwner, ustb);
     _contractName = "";
-    _address = payable(address(new SuperstateOracle(initialOwner, ustb)));
+    _address = payable(address(new SuperstateOracle(initialOwner, ustb, maximumAcceptablePriceDelta)));
 }
 
 contract DeploySuperstateOracle is Script {
@@ -30,7 +30,7 @@ contract DeploySuperstateOracle is Script {
         returns (address payable _address, bytes memory _constructorParams, string memory _contractName)
     {
         vm.startBroadcast(deployer);
-        (_address, _constructorParams, _contractName) = deploySuperstateOracle(ADMIN, USTB);
+        (_address, _constructorParams, _contractName) = deploySuperstateOracle(ADMIN, USTB, 1_000_000);
 
         console.log("_constructorParams:", string(abi.encode(_constructorParams)));
         console.logBytes(_constructorParams);
