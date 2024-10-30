@@ -22,9 +22,6 @@ contract SuperstateOracle is AggregatorV3Interface, Ownable2Step {
     /// @notice Number of days in seconds to keep extrapolating from latest checkpoint
     uint256 public constant CHECKPOINT_EXPIRATION_PERIOD = 5 * 24 * 60 * 60; // 5 days in seconds
 
-    /// @notice Lowest acceptable Net Asset Value per Share price
-    uint256 public immutable MINIMUM_ACCEPTABLE_PRICE;
-
     /// @notice Highest accepted delta between new Net Asset Value per Share price and the last one
     uint256 public immutable MAXIMUM_ACCEPTABLE_PRICE_DELTA;
 
@@ -77,12 +74,8 @@ contract SuperstateOracle is AggregatorV3Interface, Ownable2Step {
     error TimestampNotChronological();
 
     constructor(address initialOwner, address ustbTokenProxy) Ownable(initialOwner) {
-        // SUPERSTATE_TOKEN starts at $10.000000. An Oracle with 6 decimals would represent as 10_000_000.
-        // This math will give us 7_000_000 or $7.000000.
-        MINIMUM_ACCEPTABLE_PRICE = 7 * (10 ** uint256(DECIMALS));
-
-        // Increase of greater than 10 cents in a day is likely wrong for USTB
-        MAXIMUM_ACCEPTABLE_PRICE_DELTA = 100_000;
+        // Increase/decrease of greater than 1 dollar in a day is likely wrong for USTB
+        MAXIMUM_ACCEPTABLE_PRICE_DELTA = 1_000_000;
         USTB_TOKEN_PROXY_ADDRESS = ustbTokenProxy;
     }
 
@@ -115,12 +108,13 @@ contract SuperstateOracle is AggregatorV3Interface, Ownable2Step {
         // effectiveAt must be now or in the future
         if (effectiveAt < nowTimestamp) revert EffectiveAtInvalid();
 
-        if (navs < MINIMUM_ACCEPTABLE_PRICE) revert NetAssetValuePerShareTooLow();
+
 
         // Can only add new checkpoints going chronologically forward
         if (checkpoints.length > 0) {
             NavsCheckpoint memory latest = checkpoints[checkpoints.length - 1];
             if (navs > latest.navs + MAXIMUM_ACCEPTABLE_PRICE_DELTA) revert NetAssetValuePerShareTooHigh();
+            if (navs < latest.navs - MAXIMUM_ACCEPTABLE_PRICE_DELTA) revert NetAssetValuePerShareTooLow();
 
             if (latest.timestamp >= timestamp) {
                 revert TimestampNotChronological();

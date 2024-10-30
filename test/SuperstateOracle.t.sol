@@ -81,12 +81,6 @@ contract SuperstateOracleTest is Test {
         oracle.addCheckpoint(uint64(block.timestamp - 100), uint64(block.timestamp - 1), 10_000_000, false);
     }
 
-    function testAddCheckpointNetAssetValuePerShareInvalid() public {
-        hoax(owner);
-        vm.expectRevert(SuperstateOracle.NetAssetValuePerShareTooLow.selector);
-        oracle.addCheckpoint(uint64(block.timestamp - 100), uint64(block.timestamp + 100), 6_999_999, false);
-    }
-
     function testAddCheckpointTimestampNotChronological() public {
         hoax(owner);
         oracle.addCheckpoint(uint64(block.timestamp - 100), uint64(block.timestamp + 100), 10_000_000, false);
@@ -234,11 +228,31 @@ contract SuperstateOracleTest is Test {
         checkpoints[1] = SuperstateOracle.NavsCheckpoint({
             timestamp: uint64(block.timestamp - 50),
             effectiveAt: uint64(block.timestamp + 1 days),
-            navs: 10_100_001
+            navs: 11_000_001
         });
 
         hoax(owner);
         vm.expectRevert(SuperstateOracle.NetAssetValuePerShareTooHigh.selector);
+        oracle.addCheckpoints(checkpoints);
+    }
+
+    function testAddCheckpointsFailNavsTooLow() public {
+        SuperstateOracle.NavsCheckpoint[] memory checkpoints = new SuperstateOracle.NavsCheckpoint[](2);
+
+        checkpoints[0] = SuperstateOracle.NavsCheckpoint({
+            timestamp: uint64(block.timestamp - 100),
+            effectiveAt: uint64(block.timestamp + 1 hours),
+            navs: 10_000_000
+        });
+
+        checkpoints[1] = SuperstateOracle.NavsCheckpoint({
+            timestamp: uint64(block.timestamp - 50),
+            effectiveAt: uint64(block.timestamp + 1 days),
+            navs: 8_999_999
+        });
+
+        hoax(owner);
+        vm.expectRevert(SuperstateOracle.NetAssetValuePerShareTooLow.selector);
         oracle.addCheckpoints(checkpoints);
     }
 
