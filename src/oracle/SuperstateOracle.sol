@@ -81,7 +81,7 @@ contract SuperstateOracle is AggregatorV3Interface, Ownable2Step {
         // This math will give us 7_000_000 or $7.000000.
         MINIMUM_ACCEPTABLE_PRICE = 7 * (10 ** uint256(DECIMALS));
 
-        // Increase of great than 10 cents in a day is likely wrong for USTB
+        // Increase of greater than 10 cents in a day is likely wrong for USTB
         MAXIMUM_ACCEPTABLE_PRICE_DELTA = 100_000;
         USTB_TOKEN_PROXY_ADDRESS = ustbTokenProxy;
     }
