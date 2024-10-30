@@ -83,7 +83,7 @@ contract SuperstateOracleTest is Test {
 
     function testAddCheckpointNetAssetValuePerShareInvalid() public {
         hoax(owner);
-        vm.expectRevert(SuperstateOracle.NetAssetValuePerShareInvalid.selector);
+        vm.expectRevert(SuperstateOracle.NetAssetValuePerShareTooLow.selector);
         oracle.addCheckpoint(uint64(block.timestamp - 100), uint64(block.timestamp + 100), 6_999_999, false);
     }
 
@@ -215,10 +215,30 @@ contract SuperstateOracleTest is Test {
         checkpoints[1] = SuperstateOracle.NavsCheckpoint({
             timestamp: uint64(block.timestamp - 50),
             effectiveAt: uint64(block.timestamp + 1 days),
-            navs: 11_000_000
+            navs: 10_100_000
         });
 
         hoax(owner);
+        oracle.addCheckpoints(checkpoints);
+    }
+
+    function testAddCheckpointsFailNavsTooHigh() public {
+        SuperstateOracle.NavsCheckpoint[] memory checkpoints = new SuperstateOracle.NavsCheckpoint[](2);
+
+        checkpoints[0] = SuperstateOracle.NavsCheckpoint({
+            timestamp: uint64(block.timestamp - 100),
+            effectiveAt: uint64(block.timestamp + 1 hours),
+            navs: 10_000_000
+        });
+
+        checkpoints[1] = SuperstateOracle.NavsCheckpoint({
+            timestamp: uint64(block.timestamp - 50),
+            effectiveAt: uint64(block.timestamp + 1 days),
+            navs: 10_100_001
+        });
+
+        hoax(owner);
+        vm.expectRevert(SuperstateOracle.NetAssetValuePerShareTooHigh.selector);
         oracle.addCheckpoints(checkpoints);
     }
 
@@ -239,7 +259,7 @@ contract SuperstateOracleTest is Test {
         assertEq(10_382_109, answer);
 
         hoax(owner);
-        oracle.addCheckpoint(uint64(1726920000 - 1), 1726920000 + 1, 500_000_000, false);
+        oracle.addCheckpoint(uint64(1726920000 - 1), 1726920000 + 1, 10_479_322, false);
 
         (, int256 answer2,,,) = oracle.latestRoundData();
         assertEq(10_382_109, answer2);
@@ -247,6 +267,6 @@ contract SuperstateOracleTest is Test {
         vm.warp(1726920000 + 1); // price changes now since new crazy high checkpoint is now effective_at
 
         (, int256 answer3,,,) = oracle.latestRoundData();
-        assertEq(500_018_134, answer3);
+        assertEq(10_479_325, answer3);
     }
 }

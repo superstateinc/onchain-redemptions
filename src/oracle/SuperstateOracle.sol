@@ -25,6 +25,9 @@ contract SuperstateOracle is AggregatorV3Interface, Ownable2Step {
     /// @notice Lowest acceptable Net Asset Value per Share price
     uint256 public immutable MINIMUM_ACCEPTABLE_PRICE;
 
+    /// @notice Highest accepted delta between new Net Asset Value per Share price and the last one
+    uint256 public immutable MAXIMUM_ACCEPTABLE_PRICE_DELTA;
+
     /// @notice The address of the USTB token proxy contract that this oracle prices
     address public immutable USTB_TOKEN_PROXY_ADDRESS;
 
@@ -55,8 +58,11 @@ contract SuperstateOracle is AggregatorV3Interface, Ownable2Step {
     /// @dev Thrown when there is an effectiveAt in the future for a previously written checkpoint
     error ExistingPendingEffectiveAt();
 
-    /// @dev Thrown when the navs argument is invalid
-    error NetAssetValuePerShareInvalid();
+    /// @dev Thrown when the navs argument is too low
+    error NetAssetValuePerShareTooLow();
+
+    /// @dev Thrown when the navs argument is too high
+    error NetAssetValuePerShareTooHigh();
 
     /// @dev Thrown when the function is not implemented
     error NotImplemented();
@@ -74,6 +80,9 @@ contract SuperstateOracle is AggregatorV3Interface, Ownable2Step {
         // SUPERSTATE_TOKEN starts at $10.000000. An Oracle with 6 decimals would represent as 10_000_000.
         // This math will give us 7_000_000 or $7.000000.
         MINIMUM_ACCEPTABLE_PRICE = 7 * (10 ** uint256(DECIMALS));
+
+        // Increase of great than 10 cents in a day is likely wrong for USTB
+        MAXIMUM_ACCEPTABLE_PRICE_DELTA = 100_000;
         USTB_TOKEN_PROXY_ADDRESS = ustbTokenProxy;
     }
 
@@ -106,11 +115,12 @@ contract SuperstateOracle is AggregatorV3Interface, Ownable2Step {
         // effectiveAt must be now or in the future
         if (effectiveAt < nowTimestamp) revert EffectiveAtInvalid();
 
-        if (navs < MINIMUM_ACCEPTABLE_PRICE) revert NetAssetValuePerShareInvalid();
+        if (navs < MINIMUM_ACCEPTABLE_PRICE) revert NetAssetValuePerShareTooLow();
 
         // Can only add new checkpoints going chronologically forward
         if (checkpoints.length > 0) {
             NavsCheckpoint memory latest = checkpoints[checkpoints.length - 1];
+            if (navs > latest.navs + MAXIMUM_ACCEPTABLE_PRICE_DELTA) revert NetAssetValuePerShareTooHigh();
 
             if (latest.timestamp >= timestamp) {
                 revert TimestampNotChronological();
