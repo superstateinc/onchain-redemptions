@@ -130,8 +130,6 @@ contract SuperstateOracle is AggregatorV3Interface, Ownable2Step {
         // effectiveAt must be now or in the future
         if (effectiveAt < nowTimestamp) revert EffectiveAtInvalid();
 
-
-
         // Can only add new checkpoints going chronologically forward
         if (checkpoints.length > 0) {
             NavsCheckpoint memory latest = checkpoints[checkpoints.length - 1];

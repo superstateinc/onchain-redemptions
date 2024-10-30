@@ -189,6 +189,8 @@ contract SuperstateOracleTest is Test {
         vm.warp(1726779601);
 
         hoax(owner);
+        vm.expectEmit(true, true, true, true);
+        emit SuperstateOracle.NewCheckpoint(1726779600, 1726779601, 10_379_322);
         oracle.addCheckpoint(1726779600, 1726779601, 10_379_322, false); // Swapped: was 10_374_862
 
         vm.warp(1726866001);
@@ -296,7 +298,9 @@ contract SuperstateOracleTest is Test {
 
     function testSetMaximumAcceptablePrice() public {
         assertEq(1_000_000, oracle.maximumAcceptablePriceDelta());
-        
+
+        vm.expectEmit(true, true, true, true);
+        emit SuperstateOracle.SetMaximumAcceptablePriceDelta(1_000_000, 500_000);
         oracle.setMaximumAcceptablePriceDelta(500_000);
 
         assertEq(500_000, oracle.maximumAcceptablePriceDelta());
