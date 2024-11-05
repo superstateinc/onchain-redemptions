@@ -15,10 +15,6 @@ import {deployRedemptionIdle} from "../script/RedemptionIdle.s.sol";
 import {SuperstateOracle} from "../src/oracle/SuperstateOracle.sol";
 import {deploySuperstateOracle} from "../script/SuperstateOracle.s.sol";
 
-import "openzeppelin-contracts/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
-
-import {Vm} from "forge-std/Vm.sol";
-
 contract RedemptionIdleTest is Test {
     address public owner = address(this);
 
@@ -36,8 +32,6 @@ contract RedemptionIdleTest is Test {
 
     SuperstateOracle public oracle;
     IRedemptionIdle public redemption;
-
-    TransparentUpgradeableProxy public redemptionProxy;
 
     function setUp() public {
         vm.createSelectFork(vm.envString("ETH_RPC_URL"), 19_976_215);
