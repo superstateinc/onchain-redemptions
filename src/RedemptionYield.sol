@@ -48,11 +48,7 @@ contract RedemptionYield is Redemption {
         if (superstateTokenInAmount == 0) revert BadArgs();
         _requireNotPaused();
 
-        (bool isBadData,, uint256 usdPerUstbChainlinkRaw) = _getChainlinkPrice();
-        if (isBadData) revert BadChainlinkData();
-
-        uint256 usdcOutAmount = (superstateTokenInAmount * usdPerUstbChainlinkRaw * USDC_PRECISION)
-            / (CHAINLINK_FEED_PRECISION * SUPERSTATE_TOKEN_PRECISION);
+        (uint256 usdcOutAmount, ) = calculateUsdcOut(superstateTokenInAmount);
 
         if (COMPOUND.balanceOf(address(this)) < usdcOutAmount) revert InsufficientBalance();
 
