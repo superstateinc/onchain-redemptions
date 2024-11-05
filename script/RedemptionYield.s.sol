@@ -14,6 +14,7 @@ function deployRedemptionYield(
     address proxyOwner,
     address redemptionOwner,
     uint256 maximumOracleDelay,
+    address sweepDestination,
     address compound
 )
     returns (
@@ -32,7 +33,7 @@ function deployRedemptionYield(
 
     _proxy = address(redemptionProxy);
 
-    IRedemption(_proxy).initialize(redemptionOwner, maximumOracleDelay);
+    IRedemption(_proxy).initialize(redemptionOwner, maximumOracleDelay, sweepDestination);
 }
 
 contract DeployRedemptionYield is Script {
@@ -43,6 +44,7 @@ contract DeployRedemptionYield is Script {
     address constant USTB_NAVS_ORACLE = address(0); // TODO
     address constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
     address constant COMPOUND = 0xc3d688B66703497DAA19211EEdff47f25384cdc3;
+    address constant SWEEP_DESTINATION = address(0);
 
     uint256 constant MAXIMUM_ORACLE_DELAY = 93_600;
 
@@ -60,7 +62,14 @@ contract DeployRedemptionYield is Script {
     {
         vm.startBroadcast(deployer);
         (_address, _constructorParams, _contractName, _proxy) = deployRedemptionYield(
-            USTB, USTB_NAVS_ORACLE, USDC, PROXY_OWNER, REDEMPTION_OWNER, MAXIMUM_ORACLE_DELAY, COMPOUND
+            USTB,
+            USTB_NAVS_ORACLE,
+            USDC,
+            PROXY_OWNER,
+            REDEMPTION_OWNER,
+            MAXIMUM_ORACLE_DELAY,
+            SWEEP_DESTINATION,
+            COMPOUND
         );
 
         console.log("_constructorParams:", string(abi.encode(_constructorParams)));

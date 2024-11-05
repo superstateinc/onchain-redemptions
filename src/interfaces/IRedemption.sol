@@ -7,6 +7,11 @@ interface IRedemption {
     /// @param newMaxOracleDelay The new max oracle delay
     event SetMaximumOracleDelay(uint256 oldMaxOracleDelay, uint256 newMaxOracleDelay);
 
+    /// @notice The ```SetSweepDestination``` event is emitted when the sweep destination  is set
+    /// @param oldSweepDestination The old sweep destination
+    /// @param newSweepDestination The new sweep destination
+    event SetSweepDestination(address oldSweepDestination, address newSweepDestination);
+
     /// @dev Event emitted when SUPERSTATE_TOKEN is redeemed for USDC
     /// @param redeemer The address of the entity redeeming
     /// @param superstateTokenInAmount The amount of SUPERSTATE_TOKEN to redeem
@@ -37,5 +42,6 @@ interface IRedemption {
     function setMaximumOracleDelay(uint256 _newMaxOracleDelay) external;
     function unpause() external;
     function withdraw(address _token, address to, uint256 amount) external;
-    function initialize(address initialOwner, uint256 maximumOracleDelay) external;
+    function withdrawToSweepDestination(uint256 amount) external;
+    function initialize(address initialOwner, uint256 _maximumOracleDelay, address _sweepDestination) external;
 }

@@ -13,7 +13,8 @@ function deployRedemptionIdle(
     address usdc,
     address proxyOwner,
     address redemptionOwner,
-    uint256 maximumOracleDelay
+    uint256 maximumOracleDelay,
+    address sweepDestination
 )
     returns (
         address payable _implementation,
@@ -31,7 +32,7 @@ function deployRedemptionIdle(
 
     _proxy = address(redemptionProxy);
 
-    IRedemption(_proxy).initialize(redemptionOwner, maximumOracleDelay);
+    IRedemption(_proxy).initialize(redemptionOwner, maximumOracleDelay, sweepDestination);
 }
 
 contract DeployRedemptionIdle is Script {
@@ -41,6 +42,7 @@ contract DeployRedemptionIdle is Script {
     address constant USTB = 0x43415eB6ff9DB7E26A15b704e7A3eDCe97d31C4e;
     address constant USTB_NAVS_ORACLE = address(0); // TODO
     address constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+    address constant SWEEP_DESTINATION = address(0);
 
     uint256 constant MAXIMUM_ORACLE_DELAY = 93_600;
 
@@ -57,8 +59,9 @@ contract DeployRedemptionIdle is Script {
         returns (address payable _address, bytes memory _constructorParams, string memory _contractName, address _proxy)
     {
         vm.startBroadcast(deployer);
-        (_address, _constructorParams, _contractName, _proxy) =
-            deployRedemptionIdle(USTB, USTB_NAVS_ORACLE, USDC, PROXY_OWNER, REDEMPTION_OWNER, MAXIMUM_ORACLE_DELAY);
+        (_address, _constructorParams, _contractName, _proxy) = deployRedemptionIdle(
+            USTB, USTB_NAVS_ORACLE, USDC, PROXY_OWNER, REDEMPTION_OWNER, MAXIMUM_ORACLE_DELAY, SWEEP_DESTINATION
+        );
 
         console.log("_constructorParams:", string(abi.encode(_constructorParams)));
         console.logBytes(_constructorParams);
