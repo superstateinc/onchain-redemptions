@@ -37,9 +37,11 @@ interface IRedemption {
     function getChainlinkPrice() external view returns (bool _isBadData, uint256 _updatedAt, uint256 _price);
     function maxUstbRedemptionAmount() external view returns (uint256 _superstateTokenAmount);
     function maximumOracleDelay() external view returns (uint256);
+    function sweepDestination() external view returns (address);
     function pause() external;
     function redeem(uint256 superstateTokenInAmount) external;
     function setMaximumOracleDelay(uint256 _newMaxOracleDelay) external;
+    function setSweepDestination(address _newSweepDestination) external;
     function unpause() external;
     function withdraw(address _token, address to, uint256 amount) external;
     function withdrawToSweepDestination(uint256 amount) external;

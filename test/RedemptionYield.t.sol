@@ -352,6 +352,34 @@ contract RedemptionYieldTest is Test {
         redemption.setMaximumOracleDelay(oldDelay);
     }
 
+    function testAdminSetSweepDestination() public {
+        address newSweepDest = address(1);
+        address old = redemption.sweepDestination();
+
+        hoax(owner);
+        vm.expectEmit(true, true, true, true);
+        emit IRedemption.SetSweepDestination({oldSweepDestination: old, newSweepDestination: newSweepDest});
+        redemption.setSweepDestination(newSweepDest);
+
+        assertEq(newSweepDest, redemption.sweepDestination());
+    }
+
+    function testNonAdminSetSweepDestinationFail() public {
+        address newSweepDest = address(1);
+
+        hoax(SUPERSTATE_TOKEN_HOLDER);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, SUPERSTATE_TOKEN_HOLDER));
+        redemption.setSweepDestination(newSweepDest);
+    }
+
+    function testAdminSetSweepDestinationSameFail() public {
+        address old = redemption.sweepDestination();
+
+        hoax(owner);
+        vm.expectRevert(IRedemption.BadArgs.selector);
+        redemption.setSweepDestination(old);
+    }
+
     function testCantRedeemPaused() public {
         hoax(owner);
         redemption.pause();
