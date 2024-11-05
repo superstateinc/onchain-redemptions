@@ -33,7 +33,6 @@ contract RedemptionIdle is Redemption {
     /// @dev Will revert if oracle data is stale or there is not enough USDC in the contract
     /// @param superstateTokenInAmount The amount of SUPERSTATE_TOKEN to redeem
     function redeem(uint256 superstateTokenInAmount) external override {
-        if (superstateTokenInAmount == 0) revert BadArgs();
         _requireNotPaused();
 
         (uint256 usdcOutAmount, ) = calculateUsdcOut(superstateTokenInAmount);
