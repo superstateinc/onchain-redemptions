@@ -189,7 +189,7 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
     /// @param amount The amount of token to withdraw
     function withdraw(address _token, address to, uint256 amount) public virtual;
 
-    /// @notice The ```withdrawToSweepDestination``` function calls withdraw with added safety rails
+    /// @notice The ```withdrawToSweepDestination``` function calls ```withdraw``` with added safety rails
     /// @param amount The amount of token to withdraw
     function withdrawToSweepDestination(uint256 amount) external {
         withdraw({_token: address(USDC), to: sweepDestination, amount: amount});
