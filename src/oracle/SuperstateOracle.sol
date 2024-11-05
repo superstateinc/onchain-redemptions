@@ -81,7 +81,9 @@ contract SuperstateOracle is AggregatorV3Interface, Ownable2Step {
     /// @dev Thrown when the timestamp argument is chronologically invalid
     error TimestampNotChronological();
 
-    constructor(address initialOwner, address ustbTokenProxy, uint256 _maximumAcceptablePriceDelta) Ownable(initialOwner) {
+    constructor(address initialOwner, address ustbTokenProxy, uint256 _maximumAcceptablePriceDelta)
+        Ownable(initialOwner)
+    {
         USTB_TOKEN_PROXY_ADDRESS = ustbTokenProxy;
         _setMaximumAcceptablePriceDelta(_maximumAcceptablePriceDelta);
     }
@@ -100,7 +102,10 @@ contract SuperstateOracle is AggregatorV3Interface, Ownable2Step {
 
     function _setMaximumAcceptablePriceDelta(uint256 _newMaximumAcceptablePriceDelta) internal {
         if (maximumAcceptablePriceDelta == _newMaximumAcceptablePriceDelta) revert BadArgs();
-        emit SetMaximumAcceptablePriceDelta({oldDelta: maximumAcceptablePriceDelta, newDelta: _newMaximumAcceptablePriceDelta});
+        emit SetMaximumAcceptablePriceDelta({
+            oldDelta: maximumAcceptablePriceDelta,
+            newDelta: _newMaximumAcceptablePriceDelta
+        });
         maximumAcceptablePriceDelta = _newMaximumAcceptablePriceDelta;
     }
     /**
@@ -108,6 +113,7 @@ contract SuperstateOracle is AggregatorV3Interface, Ownable2Step {
      * @dev Requires msg.sender to be the owner address
      * @param _newMaximumAcceptablePriceDelta The new max acceptable price delta
      */
+
     function setMaximumAcceptablePriceDelta(uint256 _newMaximumAcceptablePriceDelta) external {
         _checkOwner();
         _setMaximumAcceptablePriceDelta(_newMaximumAcceptablePriceDelta);
