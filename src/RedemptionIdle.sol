@@ -11,13 +11,15 @@ import {ISuperstateToken} from "./ISuperstateToken.sol";
 contract RedemptionIdle is Redemption {
     using SafeERC20 for IERC20;
 
-    constructor(
-        address _owner,
-        address _superstateToken,
-        address _superstateTokenChainlinkFeedAddress,
-        address _usdc,
-        uint256 _maximumOracleDelay
-    ) Redemption(_owner, _superstateToken, _superstateTokenChainlinkFeedAddress, _usdc, _maximumOracleDelay) {}
+    /**
+     * @dev This empty reserved space is put in place to allow future versions to inherit from new contracts
+     * without impacting the fields within `RedemptionIdle`.
+     */
+    uint256[500] private __inheritanceGap;
+
+    constructor(address _superstateToken, address _superstateTokenChainlinkFeedAddress, address _usdc)
+        Redemption(_superstateToken, _superstateTokenChainlinkFeedAddress, _usdc)
+    {}
 
     /// @notice The ```maxUstbRedemptionAmount``` function returns the maximum amount of SUPERSTATE_TOKEN that can be redeemed based on the amount of USDC in the contract
     /// @return _superstateTokenAmount The maximum amount of SUPERSTATE_TOKEN that can be redeemed

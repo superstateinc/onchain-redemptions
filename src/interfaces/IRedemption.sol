@@ -37,4 +37,5 @@ interface IRedemption {
     function setMaximumOracleDelay(uint256 _newMaxOracleDelay) external;
     function unpause() external;
     function withdraw(address _token, address to, uint256 amount) external;
+    function initialize(address initialOwner, uint256 maximumOracleDelay) external;
 }

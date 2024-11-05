@@ -15,6 +15,10 @@ import {deployRedemptionIdle} from "../script/RedemptionIdle.s.sol";
 import {SuperstateOracle} from "../src/oracle/SuperstateOracle.sol";
 import {deploySuperstateOracle} from "../script/SuperstateOracle.s.sol";
 
+import "openzeppelin-contracts/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+
+import {Vm} from "forge-std/Vm.sol";
+
 contract RedemptionIdleTest is Test {
     address public owner = address(this);
 
@@ -32,6 +36,8 @@ contract RedemptionIdleTest is Test {
 
     SuperstateOracle public oracle;
     IRedemptionIdle public redemption;
+
+    TransparentUpgradeableProxy public redemptionProxy;
 
     function setUp() public {
         vm.createSelectFork(vm.envString("ETH_RPC_URL"), 19_976_215);
@@ -57,10 +63,16 @@ contract RedemptionIdleTest is Test {
         // diff between
         // 10379322 + 4460* 1 / 86,400 = 10,379,322 interpolated nav/s
 
-        (address payable _address,,) =
-            deployRedemptionIdle(owner, address(SUPERSTATE_TOKEN), address(oracle), address(USDC), MAXIMUM_ORACLE_DELAY);
+        (,,, address proxy) = deployRedemptionIdle(
+            address(SUPERSTATE_TOKEN),
+            address(oracle),
+            address(USDC),
+            address(this),
+            address(this),
+            MAXIMUM_ORACLE_DELAY
+        );
 
-        redemption = IRedemptionIdle(_address);
+        redemption = IRedemptionIdle(address(proxy));
 
         // 10 million
         deal(address(USDC), SUPERSTATE_TOKEN_HOLDER, USDC_AMOUNT);

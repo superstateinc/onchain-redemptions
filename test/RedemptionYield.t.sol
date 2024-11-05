@@ -15,6 +15,11 @@ import {deployRedemptionYield} from "../script/RedemptionYield.s.sol";
 import {SuperstateOracle} from "../src/oracle/SuperstateOracle.sol";
 import {deploySuperstateOracle} from "../script/SuperstateOracle.s.sol";
 
+import "openzeppelin-contracts/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import "openzeppelin-contracts/contracts/proxy/transparent/ProxyAdmin.sol";
+
+import {Vm} from "forge-std/Vm.sol";
+
 contract RedemptionYieldTest is Test {
     address public owner = address(this);
 
@@ -34,6 +39,8 @@ contract RedemptionYieldTest is Test {
     SuperstateOracle public oracle;
     IRedemptionYield public redemption;
 
+    TransparentUpgradeableProxy public redemptionProxy;
+
     function setUp() public {
         vm.createSelectFork(vm.envString("ETH_RPC_URL"), 19_976_215);
         vm.roll(20_993_400);
@@ -52,10 +59,17 @@ contract RedemptionYieldTest is Test {
         hoax(owner);
         oracle.addCheckpoint(uint64(1726866000), 1726866001, 10_379_322, false);
 
-        (address payable _address,,) = deployRedemptionYield(
-            owner, address(SUPERSTATE_TOKEN), address(oracle), address(USDC), MAXIMUM_ORACLE_DELAY, address(COMPOUND)
+        (,,, address proxy) = deployRedemptionYield(
+            address(SUPERSTATE_TOKEN),
+            address(oracle),
+            address(USDC),
+            address(this),
+            address(this),
+            MAXIMUM_ORACLE_DELAY,
+            address(COMPOUND)
         );
-        redemption = IRedemptionYield(_address);
+
+        redemption = IRedemptionYield(address(proxy));
 
         vm.startPrank(allowListAdmin);
         allowList.setEntityIdForAddress(ENTITY_ID, address(redemption));

@@ -12,6 +12,7 @@ optimizer_runs = 2_000 # TODO
 solc_version = "0.8.28"
 remappings = [
     "openzeppelin-contracts/=lib/openzeppelin-contracts/",
+    "openzeppelin-contracts-upgradable/=lib/openzeppelin-contracts-upgradable/",
 ]
 
 # Contracts to track with --gas-report
