@@ -82,7 +82,7 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
         __Ownable2Step_init();
 
         _setMaximumOracleDelay(_maximumOracleDelay);
-        // TODO: sweepDestination
+        // TODO: sweepDestination and setter
     }
 
     receive() external payable {

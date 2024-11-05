@@ -7,14 +7,6 @@ import {IRedemption} from "src/interfaces/IRedemption.sol";
 
 import "openzeppelin-contracts/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
-//function deployRedemptionYield(address ustb, address oracle, address usdc, address compound)
-//    returns (address payable _address, bytes memory _constructorParams, string memory _contractName)
-//{
-//    _constructorParams = abi.encode(ustb, oracle, usdc, compound);
-//    _contractName = "";
-//    _address = payable(address(new RedemptionYield(ustb, oracle, usdc, compound)));
-//}
-
 function deployRedemptionYield(
     address ustb,
     address oracle,
@@ -43,8 +35,6 @@ function deployRedemptionYield(
     IRedemption(_proxy).initialize(redemptionOwner, maximumOracleDelay);
 }
 
-// TODO: deploy
-
 contract DeployRedemptionYield is Script {
     // all addresses are mainnet
     address constant PROXY_OWNER = address(0); // TODO
@@ -63,20 +53,6 @@ contract DeployRedemptionYield is Script {
         privateKey = vm.envUint("PK");
         deployer = vm.rememberKey(privateKey);
     }
-
-    //    function run()
-    //        public
-    //        returns (address payable _address, bytes memory _constructorParams, string memory _contractName)
-    //    {
-    //        vm.startBroadcast(deployer);
-    //        (_address, _constructorParams, _contractName) = deployRedemptionYield(USTB, USTB_NAVS_ORACLE, USDC, COMPOUND);
-    //
-    //        console.log("_constructorParams:", string(abi.encode(_constructorParams)));
-    //        console.logBytes(_constructorParams);
-    //        console.log("_address:", _address);
-    //
-    //        vm.stopBroadcast();
-    //    }
 
     function run()
         public
