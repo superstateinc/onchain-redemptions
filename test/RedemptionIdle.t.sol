@@ -6,6 +6,7 @@ import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {Ownable} from "openzeppelin-contracts/contracts/access/Ownable.sol";
 import {Pausable} from "openzeppelin-contracts/contracts/utils/Pausable.sol";
 import {AllowList} from "ustb/src/AllowList.sol";
+import {Redemption} from "../src/Redemption.sol";
 import {RedemptionYield} from "../src/RedemptionYield.sol";
 import {ISuperstateToken} from "../src/ISuperstateToken.sol";
 import {IComet} from "../src/IComet.sol";
@@ -83,7 +84,7 @@ contract RedemptionIdleTest is Test {
 
         hoax(owner);
         vm.expectEmit(true, true, true, true);
-        emit RedemptionYield.Withdraw({token: address(USDC), withdrawer: owner, to: owner, amount: USDC_AMOUNT});
+        emit Redemption.Withdraw({token: address(USDC), withdrawer: owner, to: owner, amount: USDC_AMOUNT});
         redemption.withdraw(address(USDC), owner, USDC_AMOUNT);
 
         assertEq(USDC.balanceOf(owner), USDC_AMOUNT);
@@ -97,13 +98,13 @@ contract RedemptionIdleTest is Test {
 
     function testWithdrawAmountZero() public {
         hoax(owner);
-        vm.expectRevert(RedemptionYield.BadArgs.selector);
+        vm.expectRevert(Redemption.BadArgs.selector);
         redemption.withdraw(address(USDC), owner, 0);
     }
 
     function testWithdrawBalanceZero() public {
         hoax(owner);
-        vm.expectRevert(RedemptionYield.InsufficientBalance.selector);
+        vm.expectRevert(Redemption.InsufficientBalance.selector);
         redemption.withdraw(address(SUPERSTATE_TOKEN), owner, 1);
     }
 
@@ -113,7 +114,7 @@ contract RedemptionIdleTest is Test {
         vm.startPrank(SUPERSTATE_TOKEN_HOLDER);
         SUPERSTATE_TOKEN.approve(address(redemption), superstateTokenBalance);
         // Not enough USDC in the contract
-        vm.expectRevert(RedemptionYield.InsufficientBalance.selector);
+        vm.expectRevert(Redemption.InsufficientBalance.selector);
         redemption.redeem(superstateTokenBalance);
         vm.stopPrank();
     }
@@ -151,7 +152,7 @@ contract RedemptionIdleTest is Test {
         });
         vm.expectEmit(true, true, true, true);
         // ~1e13, the original USDC amount
-        emit RedemptionYield.Redeem({
+        emit Redemption.Redeem({
             redeemer: SUPERSTATE_TOKEN_HOLDER,
             superstateTokenInAmount: superstateTokenAmount,
             usdcOutAmount: 9999999999996
@@ -226,7 +227,7 @@ contract RedemptionIdleTest is Test {
 
     function testRedeemAmountZeroFail() public {
         hoax(SUPERSTATE_TOKEN_HOLDER);
-        vm.expectRevert(RedemptionYield.BadArgs.selector);
+        vm.expectRevert(Redemption.BadArgs.selector);
         redemption.redeem(0);
     }
 
@@ -235,7 +236,7 @@ contract RedemptionIdleTest is Test {
 
         hoax(owner);
         vm.expectEmit(true, true, true, true);
-        emit RedemptionYield.SetMaximumOracleDelay({
+        emit Redemption.SetMaximumOracleDelay({
             oldMaxOracleDelay: MAXIMUM_ORACLE_DELAY,
             newMaxOracleDelay: newDelay
         });
@@ -256,7 +257,7 @@ contract RedemptionIdleTest is Test {
         uint256 oldDelay = redemption.maximumOracleDelay();
 
         hoax(owner);
-        vm.expectRevert(RedemptionYield.BadArgs.selector);
+        vm.expectRevert(Redemption.BadArgs.selector);
         redemption.setMaximumOracleDelay(oldDelay);
     }
 
