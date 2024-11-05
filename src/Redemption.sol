@@ -4,9 +4,8 @@ pragma solidity ^0.8.28;
 import {AggregatorV3Interface} from "chainlink/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {ERC20} from "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
-import {Ownable} from "openzeppelin-contracts/contracts/access/Ownable.sol";
-import {Ownable2Step} from "openzeppelin-contracts/contracts/access/Ownable2Step.sol";
-import {Pausable} from "openzeppelin-contracts/contracts/utils/Pausable.sol";
+import {Ownable2StepUpgradeable} from "openzeppelin-contracts-upgradeable/contracts/access/Ownable2StepUpgradeable.sol";
+import {PausableUpgradeable} from "openzeppelin-contracts-upgradeable/contracts/utils/PausableUpgradeable.sol";
 import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ISuperstateToken} from "./ISuperstateToken.sol";
 import {IRedemption} from "./interfaces/IRedemption.sol";
@@ -14,7 +13,13 @@ import {IRedemption} from "./interfaces/IRedemption.sol";
 /// @title Redemption
 /// @author Jon Walch and Max Wolff (Superstate)
 /// @notice Abstract contract that provides base functionality for Superstate Token redemption
-abstract contract Redemption is Pausable, Ownable2Step, IRedemption {
+abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IRedemption {
+    /**
+     * @dev This empty reserved space is put in place to allow future versions to inherit from new contracts
+     * without impacting the fields within `Redemption`.
+     */
+    uint256[500] private __inheritanceGap;
+
     /// @notice Decimals of USDC
     uint256 public constant USDC_DECIMALS = 6;
 
@@ -48,25 +53,36 @@ abstract contract Redemption is Pausable, Ownable2Step, IRedemption {
     /// @notice Value, in seconds, that determines if chainlink data is too old
     uint256 public maximumOracleDelay;
 
-    constructor(
-        address _owner,
-        address _superstateToken,
-        address _superstateTokenChainlinkFeedAddress,
-        address _usdc,
-        uint256 _maximumOracleDelay
-    ) Ownable(_owner) {
+    /// @notice Default where USDC gets swept to
+    address public sweepDestination;
+
+    /**
+     * @dev This empty reserved space is put in place to allow future versions to add new fields without impacting
+     * any contracts that inherit `Redemption`
+     */
+    uint256[100] private __additionalFieldsGap;
+
+    constructor(address _superstateToken, address _superstateTokenChainlinkFeedAddress, address _usdc) {
         CHAINLINK_FEED_ADDRESS = _superstateTokenChainlinkFeedAddress;
         CHAINLINK_FEED_DECIMALS = AggregatorV3Interface(CHAINLINK_FEED_ADDRESS).decimals();
         CHAINLINK_FEED_PRECISION = 10 ** uint256(CHAINLINK_FEED_DECIMALS);
         MINIMUM_ACCEPTABLE_PRICE = 7 * (10 ** uint256(CHAINLINK_FEED_DECIMALS));
-
-        maximumOracleDelay = _maximumOracleDelay;
 
         SUPERSTATE_TOKEN = IERC20(_superstateToken);
         USDC = IERC20(_usdc);
 
         require(ERC20(_superstateToken).decimals() == SUPERSTATE_TOKEN_DECIMALS);
         require(ERC20(_usdc).decimals() == USDC_DECIMALS);
+
+        _disableInitializers();
+    }
+
+    function initialize(address initialOwner, uint256 _maximumOracleDelay) external initializer {
+        __Ownable_init(initialOwner);
+        __Ownable2Step_init();
+
+        _setMaximumOracleDelay(_maximumOracleDelay);
+        // TODO: sweepDestination and setter
     }
 
     receive() external payable {

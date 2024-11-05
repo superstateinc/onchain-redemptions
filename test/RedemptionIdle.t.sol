@@ -57,10 +57,16 @@ contract RedemptionIdleTest is Test {
         // diff between
         // 10379322 + 4460* 1 / 86,400 = 10,379,322 interpolated nav/s
 
-        (address payable _address,,) =
-            deployRedemptionIdle(owner, address(SUPERSTATE_TOKEN), address(oracle), address(USDC), MAXIMUM_ORACLE_DELAY);
+        (,,, address proxy) = deployRedemptionIdle(
+            address(SUPERSTATE_TOKEN),
+            address(oracle),
+            address(USDC),
+            address(this),
+            address(this),
+            MAXIMUM_ORACLE_DELAY
+        );
 
-        redemption = IRedemptionIdle(_address);
+        redemption = IRedemptionIdle(address(proxy));
 
         // 10 million
         deal(address(USDC), SUPERSTATE_TOKEN_HOLDER, USDC_AMOUNT);

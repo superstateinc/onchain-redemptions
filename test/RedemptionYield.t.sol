@@ -52,10 +52,17 @@ contract RedemptionYieldTest is Test {
         hoax(owner);
         oracle.addCheckpoint(uint64(1726866000), 1726866001, 10_379_322, false);
 
-        (address payable _address,,) = deployRedemptionYield(
-            owner, address(SUPERSTATE_TOKEN), address(oracle), address(USDC), MAXIMUM_ORACLE_DELAY, address(COMPOUND)
+        (,,, address proxy) = deployRedemptionYield(
+            address(SUPERSTATE_TOKEN),
+            address(oracle),
+            address(USDC),
+            address(this),
+            address(this),
+            MAXIMUM_ORACLE_DELAY,
+            address(COMPOUND)
         );
-        redemption = IRedemptionYield(_address);
+
+        redemption = IRedemptionYield(address(proxy));
 
         vm.startPrank(allowListAdmin);
         allowList.setEntityIdForAddress(ENTITY_ID, address(redemption));

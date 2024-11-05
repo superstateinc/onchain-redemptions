@@ -14,17 +14,21 @@ import {IComet} from "./IComet.sol";
 contract RedemptionYield is Redemption {
     using SafeERC20 for IERC20;
 
+    /**
+     * @dev This empty reserved space is put in place to allow future versions to inherit from new contracts
+     * without impacting the fields within `RedemptionYield`.
+     */
+    uint256[500] private __inheritanceGap;
+
     /// @notice The CompoundV3 contract
     IComet public immutable COMPOUND;
 
     constructor(
-        address _owner,
         address _superstateToken,
         address _superstateTokenChainlinkFeedAddress,
         address _usdc,
-        uint256 _maximumOracleDelay,
         address _compound
-    ) Redemption(_owner, _superstateToken, _superstateTokenChainlinkFeedAddress, _usdc, _maximumOracleDelay) {
+    ) Redemption(_superstateToken, _superstateTokenChainlinkFeedAddress, _usdc) {
         COMPOUND = IComet(_compound);
     }
 
