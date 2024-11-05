@@ -47,7 +47,7 @@ contract RedemptionYield is Redemption {
     function redeem(uint256 superstateTokenInAmount) external override {
         _requireNotPaused();
 
-        (uint256 usdcOutAmount, ) = calculateUsdcOut(superstateTokenInAmount);
+        (uint256 usdcOutAmount,) = calculateUsdcOut(superstateTokenInAmount);
 
         if (COMPOUND.balanceOf(address(this)) < usdcOutAmount) revert InsufficientBalance();
 
@@ -69,7 +69,7 @@ contract RedemptionYield is Redemption {
     /// @param _token The address of the token to withdraw
     /// @param to The address where the tokens are going
     /// @param amount The amount of `_token` to withdraw
-    function withdraw(address _token, address to, uint256 amount) external override {
+    function withdraw(address _token, address to, uint256 amount) public override {
         _checkOwner();
         if (amount == 0) revert BadArgs();
 

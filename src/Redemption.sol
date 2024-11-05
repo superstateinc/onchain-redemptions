@@ -77,12 +77,15 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
         _disableInitializers();
     }
 
-    function initialize(address initialOwner, uint256 _maximumOracleDelay) external initializer {
+    function initialize(address initialOwner, uint256 _maximumOracleDelay, address _sweepDestination)
+        external
+        initializer
+    {
         __Ownable_init(initialOwner);
         __Ownable2Step_init();
 
         _setMaximumOracleDelay(_maximumOracleDelay);
-        // TODO: sweepDestination and setter
+        _setSweepDestination(_sweepDestination);
     }
 
     receive() external payable {
@@ -105,6 +108,18 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
         _checkOwner();
         _requirePaused();
         _unpause();
+    }
+
+    function _setSweepDestination(address _newSweepDestination) internal {
+        if (sweepDestination == _newSweepDestination) revert BadArgs();
+        emit SetSweepDestination({oldSweepDestination: sweepDestination, newSweepDestination: _newSweepDestination});
+        sweepDestination = _newSweepDestination;
+    }
+
+    /// @notice Sets the sweep destination for withdrawToSweepDestination
+    function setSweepDestination(address _newSweepDestination) external {
+        _checkOwner();
+        _setSweepDestination(_newSweepDestination);
     }
 
     function _setMaximumOracleDelay(uint256 _newMaxOracleDelay) internal {
@@ -172,5 +187,11 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
     /// @param _token The address of the token to withdraw
     /// @param to The address where the tokens are going
     /// @param amount The amount of token to withdraw
-    function withdraw(address _token, address to, uint256 amount) external virtual;
+    function withdraw(address _token, address to, uint256 amount) public virtual;
+
+    /// @notice The ```withdrawToSweepDestination``` function calls ```withdraw``` with added safety rails
+    /// @param amount The amount of token to withdraw
+    function withdrawToSweepDestination(uint256 amount) external {
+        withdraw({_token: address(USDC), to: sweepDestination, amount: amount});
+    }
 }

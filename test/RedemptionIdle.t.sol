@@ -63,7 +63,8 @@ contract RedemptionIdleTest is Test {
             address(USDC),
             address(this),
             address(this),
-            MAXIMUM_ORACLE_DELAY
+            MAXIMUM_ORACLE_DELAY,
+            address(this)
         );
 
         redemption = IRedemptionIdle(address(proxy));
@@ -95,6 +96,17 @@ contract RedemptionIdleTest is Test {
         redemption.withdraw(address(USDC), owner, USDC_AMOUNT);
 
         assertEq(USDC.balanceOf(owner), USDC_AMOUNT);
+    }
+
+    function testWithdrawToSweepUsdc() public {
+        deal(address(USDC), address(redemption), USDC_AMOUNT);
+
+        hoax(owner);
+        vm.expectEmit(true, true, true, true);
+        emit IRedemption.Withdraw({token: address(USDC), withdrawer: owner, to: owner, amount: USDC_AMOUNT});
+        redemption.withdrawToSweepDestination(USDC_AMOUNT);
+
+        assertEq(USDC.balanceOf(address(this)), USDC_AMOUNT);
     }
 
     function testWithdrawNotAdmin() public {
@@ -263,6 +275,34 @@ contract RedemptionIdleTest is Test {
         hoax(owner);
         vm.expectRevert(IRedemption.BadArgs.selector);
         redemption.setMaximumOracleDelay(oldDelay);
+    }
+
+    function testAdminSetSweepDestination() public {
+        address newSweepDest = address(1);
+        address old = redemption.sweepDestination();
+
+        hoax(owner);
+        vm.expectEmit(true, true, true, true);
+        emit IRedemption.SetSweepDestination({oldSweepDestination: old, newSweepDestination: newSweepDest});
+        redemption.setSweepDestination(newSweepDest);
+
+        assertEq(newSweepDest, redemption.sweepDestination());
+    }
+
+    function testNonAdminSetSweepDestinationFail() public {
+        address newSweepDest = address(1);
+
+        hoax(SUPERSTATE_TOKEN_HOLDER);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, SUPERSTATE_TOKEN_HOLDER));
+        redemption.setSweepDestination(newSweepDest);
+    }
+
+    function testAdminSetSweepDestinationSameFail() public {
+        address old = redemption.sweepDestination();
+
+        hoax(owner);
+        vm.expectRevert(IRedemption.BadArgs.selector);
+        redemption.setSweepDestination(old);
     }
 
     function testCantRedeemPaused() public {
