@@ -45,14 +45,9 @@ contract RedemptionYield is Redemption {
     /// @dev Will revert if oracle data is stale or there is not enough USDC in the contract
     /// @param superstateTokenInAmount The amount of SUPERSTATE_TOKEN to redeem
     function redeem(uint256 superstateTokenInAmount) external override {
-        if (superstateTokenInAmount == 0) revert BadArgs();
         _requireNotPaused();
 
-        (bool isBadData,, uint256 usdPerUstbChainlinkRaw) = _getChainlinkPrice();
-        if (isBadData) revert BadChainlinkData();
-
-        uint256 usdcOutAmount = (superstateTokenInAmount * usdPerUstbChainlinkRaw * USDC_PRECISION)
-            / (CHAINLINK_FEED_PRECISION * SUPERSTATE_TOKEN_PRECISION);
+        (uint256 usdcOutAmount, ) = calculateUsdcOut(superstateTokenInAmount);
 
         if (COMPOUND.balanceOf(address(this)) < usdcOutAmount) revert InsufficientBalance();
 
