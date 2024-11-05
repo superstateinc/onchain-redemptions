@@ -9,11 +9,12 @@ import {Ownable2Step} from "openzeppelin-contracts/contracts/access/Ownable2Step
 import {Pausable} from "openzeppelin-contracts/contracts/utils/Pausable.sol";
 import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ISuperstateToken} from "./ISuperstateToken.sol";
+import {IRedemption} from "./interfaces/IRedemption.sol";
 
 /// @title Redemption
 /// @author Jon Walch and Max Wolff (Superstate)
 /// @notice Abstract contract that provides base functionality for Superstate Token redemption
-abstract contract Redemption is Pausable, Ownable2Step {
+abstract contract Redemption is Pausable, Ownable2Step, IRedemption {
     /// @notice Decimals of USDC
     uint256 public constant USDC_DECIMALS = 6;
 
@@ -46,33 +47,6 @@ abstract contract Redemption is Pausable, Ownable2Step {
 
     /// @notice Value, in seconds, that determines if chainlink data is too old
     uint256 public maximumOracleDelay;
-
-    /// @notice The ```SetMaximumOracleDelay``` event is emitted when the max oracle delay is set
-    /// @param oldMaxOracleDelay The old max oracle delay
-    /// @param newMaxOracleDelay The new max oracle delay
-    event SetMaximumOracleDelay(uint256 oldMaxOracleDelay, uint256 newMaxOracleDelay);
-
-    /// @dev Event emitted when SUPERSTATE_TOKEN is redeemed for USDC
-    /// @param redeemer The address of the entity redeeming
-    /// @param superstateTokenInAmount The amount of SUPERSTATE_TOKEN to redeem
-    /// @param usdcOutAmount The amount of USDC the redeemer gets back
-    event Redeem(address indexed redeemer, uint256 superstateTokenInAmount, uint256 usdcOutAmount);
-
-    /// @dev Event emitted when tokens are withdrawn
-    /// @param token The address of the token being withdrawn
-    /// @param withdrawer The address of the caller
-    /// @param to The address receiving the tokens
-    /// @param amount The amount of token the redeemer gets back
-    event Withdraw(address indexed token, address indexed withdrawer, address indexed to, uint256 amount);
-
-    /// @dev Thrown when an argument is invalid
-    error BadArgs();
-
-    /// @dev Thrown when there isn't enough token balance in the contract
-    error InsufficientBalance();
-
-    /// @dev Thrown when Chainlink Oracle data is bad
-    error BadChainlinkData();
 
     constructor(
         address _owner,
@@ -131,7 +105,7 @@ abstract contract Redemption is Pausable, Ownable2Step {
 
     function _getChainlinkPrice() internal view returns (bool _isBadData, uint256 _updatedAt, uint256 _price) {
         (, int256 _answer,, uint256 _chainlinkUpdatedAt,) =
-                                AggregatorV3Interface(CHAINLINK_FEED_ADDRESS).latestRoundData();
+            AggregatorV3Interface(CHAINLINK_FEED_ADDRESS).latestRoundData();
 
         _isBadData =
             _answer < int256(MINIMUM_ACCEPTABLE_PRICE) || ((block.timestamp - _chainlinkUpdatedAt) > maximumOracleDelay);

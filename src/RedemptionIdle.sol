@@ -19,12 +19,17 @@ contract RedemptionIdle is Redemption {
         uint256 _maximumOracleDelay
     ) Redemption(_owner, _superstateToken, _superstateTokenChainlinkFeedAddress, _usdc, _maximumOracleDelay) {}
 
+    /// @notice The ```maxUstbRedemptionAmount``` function returns the maximum amount of SUPERSTATE_TOKEN that can be redeemed based on the amount of USDC in the contract
+    /// @return _superstateTokenAmount The maximum amount of SUPERSTATE_TOKEN that can be redeemed
     function maxUstbRedemptionAmount() external view override returns (uint256 _superstateTokenAmount) {
         (,, uint256 usdPerUstbChainlinkRaw) = _getChainlinkPrice();
         _superstateTokenAmount = (USDC.balanceOf(address(this)) * CHAINLINK_FEED_PRECISION * SUPERSTATE_TOKEN_PRECISION)
             / (usdPerUstbChainlinkRaw * USDC_PRECISION);
     }
 
+    /// @notice The ```redeem``` function allows users to redeem SUPERSTATE_TOKEN for USDC at the current oracle price
+    /// @dev Will revert if oracle data is stale or there is not enough USDC in the contract
+    /// @param superstateTokenInAmount The amount of SUPERSTATE_TOKEN to redeem
     function redeem(uint256 superstateTokenInAmount) external override {
         if (superstateTokenInAmount == 0) revert BadArgs();
         _requireNotPaused();
@@ -48,6 +53,11 @@ contract RedemptionIdle is Redemption {
         });
     }
 
+    /// @notice The ```withdraw``` function allows the owner to withdraw any type of ERC20
+    /// @dev Requires msg.sender to be the owner address
+    /// @param _token The address of the token to withdraw
+    /// @param to The address where the tokens are going
+    /// @param amount The amount of `_token` to withdraw
     function withdraw(address _token, address to, uint256 amount) external override {
         _checkOwner();
         if (amount == 0) revert BadArgs();

@@ -2,21 +2,20 @@
 pragma solidity ^0.8.28;
 
 import {Redemption} from "./Redemption.sol";
+import {IRedemptionYield} from "src/interfaces/IRedemptionYield.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ISuperstateToken} from "./ISuperstateToken.sol";
 import {IComet} from "./IComet.sol";
 
 /// @title RedemptionYield
+/// @author Jon Walch and Max Wolff (Superstate) https://github.com/superstateinc
 /// @notice Implementation of Redemption that deploys idle USDC into Compound v3
 contract RedemptionYield is Redemption {
     using SafeERC20 for IERC20;
 
     /// @notice The CompoundV3 contract
     IComet public immutable COMPOUND;
-
-    /// @dev Event emitted when usdc is deposited into the contract via the deposit function
-    event Deposit(address indexed token, address indexed depositor, uint256 amount);
 
     constructor(
         address _owner,
@@ -29,6 +28,8 @@ contract RedemptionYield is Redemption {
         COMPOUND = IComet(_compound);
     }
 
+    /// @notice The ```maxUstbRedemptionAmount``` function returns the maximum amount of SUPERSTATE_TOKEN that can be redeemed based on the amount of USDC in the contract
+    /// @return _superstateTokenAmount The maximum amount of SUPERSTATE_TOKEN that can be redeemed
     function maxUstbRedemptionAmount() external view override returns (uint256 _superstateTokenAmount) {
         (,, uint256 usdPerUstbChainlinkRaw) = _getChainlinkPrice();
         _superstateTokenAmount = (
@@ -36,6 +37,9 @@ contract RedemptionYield is Redemption {
         ) / (usdPerUstbChainlinkRaw * USDC_PRECISION);
     }
 
+    /// @notice The ```redeem``` function allows users to redeem SUPERSTATE_TOKEN for USDC at the current oracle price
+    /// @dev Will revert if oracle data is stale or there is not enough USDC in the contract
+    /// @param superstateTokenInAmount The amount of SUPERSTATE_TOKEN to redeem
     function redeem(uint256 superstateTokenInAmount) external override {
         if (superstateTokenInAmount == 0) revert BadArgs();
         _requireNotPaused();
@@ -59,6 +63,13 @@ contract RedemptionYield is Redemption {
         });
     }
 
+    /// @notice The ```withdraw``` function allows the owner to withdraw any type of ERC20
+    /// @dev Requires msg.sender to be the owner address
+    /// @dev If you specify the compound (cUSDC) address, you'll withdraw from compound and receive USDC, every other token works as expected.
+    /// @dev Allows type(uint256).max withdraw from Compound when COMPOUND is the _token argument
+    /// @param _token The address of the token to withdraw
+    /// @param to The address where the tokens are going
+    /// @param amount The amount of `_token` to withdraw
     function withdraw(address _token, address to, uint256 amount) external override {
         _checkOwner();
         if (amount == 0) revert BadArgs();
@@ -83,7 +94,8 @@ contract RedemptionYield is Redemption {
         }
     }
 
-    /// @notice Deposits USDC from the caller to this contract and then to Compound v3 to accrue interest
+    /// @notice The ```deposit``` function transfer USDC from the caller to this contract and then to Compound v3 to accrue interest
+    /// @dev Requires msg.sender to be the owner address
     /// @param usdcAmount amount of approved usdc to put into this contract / deposit in compound
     function deposit(uint256 usdcAmount) external {
         _checkOwner();
@@ -93,6 +105,6 @@ contract RedemptionYield is Redemption {
         USDC.approve({spender: address(COMPOUND), value: usdcAmount});
         COMPOUND.supply({asset: address(USDC), amount: usdcAmount});
 
-        emit Deposit({token: address(USDC), depositor: msg.sender, amount: usdcAmount});
+        emit IRedemptionYield.Deposit({token: address(USDC), depositor: msg.sender, amount: usdcAmount});
     }
 }

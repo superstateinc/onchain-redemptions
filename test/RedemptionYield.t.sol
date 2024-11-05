@@ -7,7 +7,8 @@ import {Ownable} from "openzeppelin-contracts/contracts/access/Ownable.sol";
 import {Pausable} from "openzeppelin-contracts/contracts/utils/Pausable.sol";
 import {AllowList} from "ustb/src/AllowList.sol";
 import {Redemption} from "../src/Redemption.sol";
-import {RedemptionYield} from "../src/RedemptionYield.sol";
+import {IRedemption} from "src/interfaces/IRedemption.sol";
+import {IRedemptionYield} from "src/interfaces/IRedemptionYield.sol";
 import {ISuperstateToken} from "../src/ISuperstateToken.sol";
 import {IComet} from "../src/IComet.sol";
 import {deployRedemptionYield} from "../script/RedemptionYield.s.sol";
@@ -31,7 +32,7 @@ contract RedemptionYieldTest is Test {
     uint256 public constant MAXIMUM_ORACLE_DELAY = 93_600;
 
     SuperstateOracle public oracle;
-    RedemptionYield public redemption;
+    IRedemptionYield public redemption;
 
     function setUp() public {
         vm.createSelectFork(vm.envString("ETH_RPC_URL"), 19_976_215);
@@ -54,7 +55,7 @@ contract RedemptionYieldTest is Test {
         (address payable _address,,) = deployRedemptionYield(
             owner, address(SUPERSTATE_TOKEN), address(oracle), address(USDC), MAXIMUM_ORACLE_DELAY, address(COMPOUND)
         );
-        redemption = RedemptionYield(_address);
+        redemption = IRedemptionYield(_address);
 
         vm.startPrank(allowListAdmin);
         allowList.setEntityIdForAddress(ENTITY_ID, address(redemption));
@@ -66,7 +67,7 @@ contract RedemptionYieldTest is Test {
         vm.startPrank(owner);
         USDC.approve(address(redemption), USDC_AMOUNT);
         vm.expectEmit(true, true, true, true);
-        emit RedemptionYield.Deposit({token: address(USDC), depositor: owner, amount: USDC_AMOUNT});
+        emit IRedemptionYield.Deposit({token: address(USDC), depositor: owner, amount: USDC_AMOUNT});
         redemption.deposit(USDC_AMOUNT);
         vm.stopPrank();
 
@@ -85,7 +86,7 @@ contract RedemptionYieldTest is Test {
     function testDepositBadArgs() public {
         vm.startPrank(owner);
         USDC.approve(address(redemption), 0);
-        vm.expectRevert(Redemption.BadArgs.selector);
+        vm.expectRevert(IRedemption.BadArgs.selector);
         redemption.deposit(0);
         vm.stopPrank();
     }
@@ -105,7 +106,7 @@ contract RedemptionYieldTest is Test {
 
         hoax(owner);
         vm.expectEmit(true, true, true, true);
-        emit Redemption.Withdraw({token: address(USDC), withdrawer: owner, to: owner, amount: interestBalance});
+        emit IRedemption.Withdraw({token: address(USDC), withdrawer: owner, to: owner, amount: interestBalance});
         redemption.withdraw(address(COMPOUND), owner, interestBalance);
 
         assertEq(0, USDC.balanceOf(address(redemption)), "No USDC in the redemption contract");
@@ -127,7 +128,7 @@ contract RedemptionYieldTest is Test {
 
         hoax(owner);
         vm.expectEmit(true, true, true, true);
-        emit Redemption.Withdraw({token: address(USDC), withdrawer: owner, to: owner, amount: interestBalance});
+        emit IRedemption.Withdraw({token: address(USDC), withdrawer: owner, to: owner, amount: interestBalance});
         redemption.withdraw(address(COMPOUND), owner, type(uint256).max);
 
         assertEq(0, USDC.balanceOf(address(redemption)), "No USDC in the redemption contract");
@@ -142,7 +143,7 @@ contract RedemptionYieldTest is Test {
     function testWithdraw() public {
         hoax(owner);
         vm.expectEmit(true, true, true, true);
-        emit Redemption.Withdraw({token: address(USDC), withdrawer: owner, to: owner, amount: USDC_AMOUNT - 1});
+        emit IRedemption.Withdraw({token: address(USDC), withdrawer: owner, to: owner, amount: USDC_AMOUNT - 1});
         redemption.withdraw(address(COMPOUND), owner, USDC_AMOUNT - 1);
 
         assertEq(USDC.balanceOf(owner), USDC_AMOUNT - 1);
@@ -153,7 +154,7 @@ contract RedemptionYieldTest is Test {
 
         hoax(owner);
         vm.expectEmit(true, true, true, true);
-        emit Redemption.Withdraw({token: address(USDC), withdrawer: owner, to: owner, amount: USDC_AMOUNT});
+        emit IRedemption.Withdraw({token: address(USDC), withdrawer: owner, to: owner, amount: USDC_AMOUNT});
         redemption.withdraw(address(USDC), owner, USDC_AMOUNT);
 
         assertEq(USDC.balanceOf(owner), USDC_AMOUNT);
@@ -167,13 +168,13 @@ contract RedemptionYieldTest is Test {
 
     function testWithdrawAmountZero() public {
         hoax(owner);
-        vm.expectRevert(Redemption.BadArgs.selector);
+        vm.expectRevert(IRedemption.BadArgs.selector);
         redemption.withdraw(address(USDC), owner, 0);
     }
 
     function testWithdrawBalanceZero() public {
         hoax(owner);
-        vm.expectRevert(Redemption.InsufficientBalance.selector);
+        vm.expectRevert(IRedemption.InsufficientBalance.selector);
         redemption.withdraw(address(SUPERSTATE_TOKEN), owner, 1);
     }
 
@@ -183,7 +184,7 @@ contract RedemptionYieldTest is Test {
         vm.startPrank(SUPERSTATE_TOKEN_HOLDER);
         SUPERSTATE_TOKEN.approve(address(redemption), superstateTokenBalance);
         // Not enough USDC in the contract
-        vm.expectRevert(Redemption.InsufficientBalance.selector);
+        vm.expectRevert(IRedemption.InsufficientBalance.selector);
         redemption.redeem(superstateTokenBalance);
         vm.stopPrank();
     }
@@ -221,7 +222,7 @@ contract RedemptionYieldTest is Test {
         });
         vm.expectEmit(true, true, true, true);
         // ~1e13, the original USDC amount
-        emit Redemption.Redeem({
+        emit IRedemption.Redeem({
             redeemer: SUPERSTATE_TOKEN_HOLDER,
             superstateTokenInAmount: superstateTokenAmount,
             usdcOutAmount: 9999999999996
@@ -301,7 +302,7 @@ contract RedemptionYieldTest is Test {
 
     function testRedeemAmountZeroFail() public {
         hoax(SUPERSTATE_TOKEN_HOLDER);
-        vm.expectRevert(Redemption.BadArgs.selector);
+        vm.expectRevert(IRedemption.BadArgs.selector);
         redemption.redeem(0);
     }
 
@@ -310,10 +311,7 @@ contract RedemptionYieldTest is Test {
 
         hoax(owner);
         vm.expectEmit(true, true, true, true);
-        emit Redemption.SetMaximumOracleDelay({
-            oldMaxOracleDelay: MAXIMUM_ORACLE_DELAY,
-            newMaxOracleDelay: newDelay
-        });
+        emit IRedemption.SetMaximumOracleDelay({oldMaxOracleDelay: MAXIMUM_ORACLE_DELAY, newMaxOracleDelay: newDelay});
         redemption.setMaximumOracleDelay(newDelay);
 
         assertEq(newDelay, redemption.maximumOracleDelay());
@@ -331,7 +329,7 @@ contract RedemptionYieldTest is Test {
         uint256 oldDelay = redemption.maximumOracleDelay();
 
         hoax(owner);
-        vm.expectRevert(Redemption.BadArgs.selector);
+        vm.expectRevert(IRedemption.BadArgs.selector);
         redemption.setMaximumOracleDelay(oldDelay);
     }
 
