@@ -36,7 +36,7 @@ interface IRedemption {
     /// @dev Thrown when Chainlink Oracle data is bad
     error BadChainlinkData();
 
-    /// @dev TODO
+    /// @dev Thrown when owner tries to set the fee for a stablecoin too high
     error FeeTooHigh();
 
     /// @dev Thrown when there isn't enough token balance in the contract

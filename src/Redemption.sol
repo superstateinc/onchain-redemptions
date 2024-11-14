@@ -59,7 +59,7 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
     /// @notice Default where USDC gets swept to
     address public sweepDestination;
 
-    // @notice TODO
+    // @notice A fee charged on incoming USDC
     uint96 public redemptionFee;
 
     /**
@@ -116,7 +116,10 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
         redemptionFee = _newFee;
     }
 
-    // TODO comments
+    /// @notice Sets redemption fee percentage (in basis points)
+    /// @dev Only callable by the admin
+    /// @dev Fee cannot exceed 10 basis points (0.1%)
+    /// @param newFee New fee in basis points. 1 = 0.01%, 5 = 0.05%, 10 = 0.1%
     function setRedemptionFee(uint96 _newFee) external {
         _checkOwner();
         _setRedemptionFee(_newFee);
