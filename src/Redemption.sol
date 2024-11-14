@@ -32,6 +32,9 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
     /// @notice Precision of SUPERSTATE_TOKEN
     uint256 public constant SUPERSTATE_TOKEN_PRECISION = 10 ** SUPERSTATE_TOKEN_DECIMALS;
 
+    /// @notice Base 10000 for 0.01% precision
+    uint256 public constant FEE_DENOMINATOR = 10_000;
+
     /// @notice Chainlink aggregator
     address public immutable CHAINLINK_FEED_ADDRESS;
 
@@ -56,6 +59,9 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
     /// @notice Default where USDC gets swept to
     address public sweepDestination;
 
+    // @notice TODO
+    uint96 public redemptionFee;
+
     /**
      * @dev This empty reserved space is put in place to allow future versions to add new fields without impacting
      * any contracts that inherit `Redemption`
@@ -77,7 +83,7 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
         _disableInitializers();
     }
 
-    function initialize(address initialOwner, uint256 _maximumOracleDelay, address _sweepDestination)
+    function initialize(address initialOwner, uint256 _maximumOracleDelay, address _sweepDestination, uint96 _redemptionFee)
         external
         initializer
     {
@@ -86,6 +92,9 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
 
         _setMaximumOracleDelay(_maximumOracleDelay);
         _setSweepDestination(_sweepDestination);
+
+        redemptionFee = _redemptionFee;
+        emit SetRedemptionFee({oldFee: 0, newFee: _redemptionFee});
     }
 
     receive() external payable {
@@ -94,6 +103,23 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
 
     fallback() external payable {
         revert();
+    }
+
+    function calculateFee(uint256 amount) public view returns (uint256) {
+        return (amount * redemptionFee) / FEE_DENOMINATOR;
+    }
+
+    function _setRedemptionFee(uint96 _newFee) internal {
+        if (_newFee > 10) revert FeeTooHigh(); // Max 0.1% fee
+        if (redemptionFee == _newFee) revert BadArgs();
+        emit SetRedemptionFee({oldFee: redemptionFee, newFee: _newFee});
+        redemptionFee = _newFee;
+    }
+
+    // TODO comments
+    function setRedemptionFee(uint96 _newFee) external {
+        _checkOwner();
+        _setRedemptionFee(_newFee);
     }
 
     /// @notice Invokes the {Pausable-_pause} internal function
@@ -147,6 +173,30 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
     /// @notice Returns the chainlink price and the timestamp of the last update
     function getChainlinkPrice() external view returns (bool _isBadData, uint256 _updatedAt, uint256 _price) {
         return _getChainlinkPrice();
+    }
+
+    /**
+     * @notice The ```calculateUstbIn``` function calculates how many Superstate tokens you need to redeem to receive a specific USDC amount
+     * @param usdcOutAmount The desired amount of USDC to receive
+     * @return ustbInAmount The amount of Superstate tokens needed
+     * @return usdPerUstbChainlinkRaw The raw chainlink price used in calculation
+     */
+    function calculateUstbIn(uint256 usdcOutAmount)
+    public
+    view
+    returns (uint256 ustbInAmount, uint256 usdPerUstbChainlinkRaw)
+    {
+        if (usdcOutAmount == 0) revert BadArgs();
+
+        uint256 usdcOutAmountWithFee = usdcOutAmount + calculateFee(usdcOutAmount);
+
+        (bool isBadData,, uint256 usdPerUstbChainlinkRaw_) = _getChainlinkPrice();
+        if (isBadData) revert BadChainlinkData();
+
+        usdPerUstbChainlinkRaw = usdPerUstbChainlinkRaw_;
+
+        ustbInAmount = (usdcOutAmountWithFee * CHAINLINK_FEED_PRECISION * SUPERSTATE_TOKEN_PRECISION)
+            / (usdPerUstbChainlinkRaw * USDC_PRECISION);
     }
 
     /**

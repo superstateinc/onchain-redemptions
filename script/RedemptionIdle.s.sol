@@ -14,7 +14,8 @@ function deployRedemptionIdle(
     address proxyOwner,
     address redemptionOwner,
     uint256 maximumOracleDelay,
-    address sweepDestination
+    address sweepDestination,
+    uint96 fee
 )
     returns (
         address payable _implementation,
@@ -32,7 +33,7 @@ function deployRedemptionIdle(
 
     _proxy = address(redemptionProxy);
 
-    IRedemption(_proxy).initialize(redemptionOwner, maximumOracleDelay, sweepDestination);
+    IRedemption(_proxy).initialize(redemptionOwner, maximumOracleDelay, sweepDestination, fee);
 }
 
 contract DeployRedemptionIdle is Script {
@@ -45,6 +46,7 @@ contract DeployRedemptionIdle is Script {
     address constant SWEEP_DESTINATION = address(0);
 
     uint256 constant MAXIMUM_ORACLE_DELAY = 93_600;
+    uint96 constant FEE = 0;
 
     address internal deployer;
     uint256 internal privateKey;
@@ -60,7 +62,7 @@ contract DeployRedemptionIdle is Script {
     {
         vm.startBroadcast(deployer);
         (_address, _constructorParams, _contractName, _proxy) = deployRedemptionIdle(
-            USTB, USTB_NAVS_ORACLE, USDC, PROXY_OWNER, REDEMPTION_OWNER, MAXIMUM_ORACLE_DELAY, SWEEP_DESTINATION
+            USTB, USTB_NAVS_ORACLE, USDC, PROXY_OWNER, REDEMPTION_OWNER, MAXIMUM_ORACLE_DELAY, SWEEP_DESTINATION, FEE
         );
 
         console.log("_constructorParams:", string(abi.encode(_constructorParams)));

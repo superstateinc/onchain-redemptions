@@ -15,6 +15,7 @@ function deployRedemptionYield(
     address redemptionOwner,
     uint256 maximumOracleDelay,
     address sweepDestination,
+    uint96 fee,
     address compound
 )
     returns (
@@ -33,7 +34,7 @@ function deployRedemptionYield(
 
     _proxy = address(redemptionProxy);
 
-    IRedemption(_proxy).initialize(redemptionOwner, maximumOracleDelay, sweepDestination);
+    IRedemption(_proxy).initialize(redemptionOwner, maximumOracleDelay, sweepDestination, fee);
 }
 
 contract DeployRedemptionYield is Script {
@@ -47,6 +48,7 @@ contract DeployRedemptionYield is Script {
     address constant SWEEP_DESTINATION = address(0);
 
     uint256 constant MAXIMUM_ORACLE_DELAY = 93_600;
+    uint96 constant FEE = 0;
 
     address internal deployer;
     uint256 internal privateKey;
@@ -69,6 +71,7 @@ contract DeployRedemptionYield is Script {
             REDEMPTION_OWNER,
             MAXIMUM_ORACLE_DELAY,
             SWEEP_DESTINATION,
+            FEE,
             COMPOUND
         );
 

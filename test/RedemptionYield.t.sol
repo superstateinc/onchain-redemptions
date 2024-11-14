@@ -60,6 +60,7 @@ contract RedemptionYieldTest is Test {
             address(this),
             MAXIMUM_ORACLE_DELAY,
             address(this),
+            0,
             address(COMPOUND)
         );
 
@@ -402,5 +403,113 @@ contract RedemptionYieldTest is Test {
         hoax(owner);
         vm.expectRevert(Pausable.ExpectedPause.selector);
         redemption.unpause();
+    }
+
+    function testCalculateUstbIn() public view {
+        uint256 usdcOutAmount = 1_000_000; // 1 USDC
+        (uint256 ustbInAmount, uint256 feedPrice) = redemption.calculateUstbIn(usdcOutAmount);
+
+        // Cross check by calculating USDC out with the calculated USTB amount
+        (uint256 usdcOutVerify,) = redemption.calculateUsdcOut(ustbInAmount);
+
+        // Allow for minor rounding differences
+        assertApproxEqAbs(usdcOutAmount, usdcOutVerify, 5);
+        assertEq(feedPrice, 10_379_322);
+    }
+
+    function testCalculateUstbInAmountZero() public {
+        vm.expectRevert(IRedemption.BadArgs.selector);
+        redemption.calculateUstbIn(0);
+    }
+
+    function testCalculateUstbInBadData() public {
+        vm.warp(block.timestamp + 5 days + 1);
+
+        vm.expectRevert(SuperstateOracle.StaleCheckpoint.selector);
+        redemption.calculateUstbIn(1_000_000);
+    }
+
+    function testCalculateUstbInFuzz(uint256 usdcOutAmount) public view {
+        // Bound to reasonable values to avoid overflow
+        usdcOutAmount = bound(usdcOutAmount, 1_000_000, 1e15);
+
+        (uint256 ustbInAmount,) = redemption.calculateUstbIn(usdcOutAmount);
+        (uint256 usdcOutVerify,) = redemption.calculateUsdcOut(ustbInAmount);
+
+        // Allow for minor rounding differences due to integer division
+        assertApproxEqRel(usdcOutAmount, usdcOutVerify, 1e14); // 0.01% tolerance
+    }
+
+    function testSetRedemptionFee() public {
+        uint96 newFee = 5; // 0.05%
+
+        hoax(owner);
+        vm.expectEmit(true, true, true, true);
+        emit IRedemption.SetRedemptionFee({oldFee: 0, newFee: newFee});
+        redemption.setRedemptionFee(newFee);
+
+        assertEq(redemption.redemptionFee(), newFee);
+    }
+
+    function testSetRedemptionFeeTooHigh() public {
+        uint96 newFee = 11; // > 0.1%
+
+        hoax(owner);
+        vm.expectRevert(IRedemption.FeeTooHigh.selector);
+        redemption.setRedemptionFee(newFee);
+    }
+
+    function testNonAdminSetRedemptionFeeFail() public {
+        hoax(SUPERSTATE_TOKEN_HOLDER);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, SUPERSTATE_TOKEN_HOLDER));
+        redemption.setRedemptionFee(5);
+    }
+
+    function testSetRedemptionFeeSameFail() public {
+        uint96 oldFee = redemption.redemptionFee();
+
+        hoax(owner);
+        vm.expectRevert(IRedemption.BadArgs.selector);
+        redemption.setRedemptionFee(oldFee);
+    }
+
+    function testCalculateFee() public {
+        uint96 fee = 5; // 0.05%
+        hoax(owner);
+        redemption.setRedemptionFee(fee);
+
+        uint256 amount = 1_000_000; // 1 USDC
+        uint256 expectedFee = 500; // 0.0005 USDC
+
+        assertEq(redemption.calculateFee(amount), expectedFee);
+    }
+
+    function testCalculateUstbInWithFee() public {
+        uint96 fee = 5; // 0.05%
+        hoax(owner);
+        redemption.setRedemptionFee(fee);
+
+        uint256 usdcOutAmount = 1_000_000; // 1 USDC
+        (uint256 ustbInAmount,) = redemption.calculateUstbIn(usdcOutAmount);
+        (uint256 usdcOutVerify,) = redemption.calculateUsdcOut(ustbInAmount);
+
+        // We need a larger amount of USTB to account for the fee
+        assertEq(usdcOutVerify, 1_000_493);
+    }
+
+    function testRedeemWithFee() public {
+        uint96 fee = 5; // 0.05%
+        hoax(owner);
+        redemption.setRedemptionFee(fee);
+
+        uint256 superstateTokenAmount = redemption.maxUstbRedemptionAmount();
+
+        vm.startPrank(SUPERSTATE_TOKEN_HOLDER);
+        SUPERSTATE_TOKEN.approve(address(redemption), superstateTokenAmount);
+        redemption.redeem(superstateTokenAmount);
+        vm.stopPrank();
+
+        uint256 redeemerUsdcBalance = USDC.balanceOf(SUPERSTATE_TOKEN_HOLDER);
+        assertEq(redeemerUsdcBalance, 9_999_999_999_996); // Original test value
     }
 }
