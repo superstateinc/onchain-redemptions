@@ -119,7 +119,7 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
     /// @notice Sets redemption fee percentage (in basis points)
     /// @dev Only callable by the admin
     /// @dev Fee cannot exceed 10 basis points (0.1%)
-    /// @param newFee New fee in basis points. 1 = 0.01%, 5 = 0.05%, 10 = 0.1%
+    /// @param _newFee New fee in basis points. 1 = 0.01%, 5 = 0.05%, 10 = 0.1%
     function setRedemptionFee(uint96 _newFee) external {
         _checkOwner();
         _setRedemptionFee(_newFee);
