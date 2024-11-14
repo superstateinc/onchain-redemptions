@@ -13,9 +13,10 @@ function deploySuperstateOracle(address initialOwner, address ustb, uint256 maxi
 }
 
 contract DeploySuperstateOracle is Script {
-    // all addresses are mainnet
-    address public constant ADMIN = 0x8C7Db8A96d39F76D9f456db23d591C2FDd0e2F8a; // TODO: update
-    address public constant USTB = 0x43415eB6ff9DB7E26A15b704e7A3eDCe97d31C4e;
+    // all addresses are sepolia
+    address public constant ADMIN = 0x8C7Db8A96d39F76D9f456db23d591C2FDd0e2F8a; //TODO
+    address public constant USTB = 0x03891c84c877d68DA8d3E4189b74c3e44a1C2B63;
+    uint256 public constant MAXIMUM_ACCEPTABLE_PRICE_DELTA = 1_000_000;
 
     address internal deployer;
     uint256 internal privateKey;
@@ -30,7 +31,8 @@ contract DeploySuperstateOracle is Script {
         returns (address payable _address, bytes memory _constructorParams, string memory _contractName)
     {
         vm.startBroadcast(deployer);
-        (_address, _constructorParams, _contractName) = deploySuperstateOracle(ADMIN, USTB, 1_000_000);
+        (_address, _constructorParams, _contractName) =
+            deploySuperstateOracle(ADMIN, USTB, MAXIMUM_ACCEPTABLE_PRICE_DELTA);
 
         console.log("_constructorParams:", string(abi.encode(_constructorParams)));
         console.logBytes(_constructorParams);
