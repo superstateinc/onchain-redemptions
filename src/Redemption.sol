@@ -238,6 +238,7 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
     function redeem(uint256 superstateTokenInAmount) external virtual;
 
     /// @notice Abstract function that must be implemented by derived contracts
+    /// @dev Must implement proper access controls
     /// @param _token The address of the token to withdraw
     /// @param to The address where the tokens are going
     /// @param amount The amount of token to withdraw
