@@ -83,10 +83,12 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
         _disableInitializers();
     }
 
-    function initialize(address initialOwner, uint256 _maximumOracleDelay, address _sweepDestination, uint96 _redemptionFee)
-        external
-        initializer
-    {
+    function initialize(
+        address initialOwner,
+        uint256 _maximumOracleDelay,
+        address _sweepDestination,
+        uint96 _redemptionFee
+    ) external initializer {
         __Ownable_init(initialOwner);
         __Ownable2Step_init();
 
@@ -185,9 +187,9 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
      * @return usdPerUstbChainlinkRaw The raw chainlink price used in calculation
      */
     function calculateUstbIn(uint256 usdcOutAmount)
-    public
-    view
-    returns (uint256 ustbInAmount, uint256 usdPerUstbChainlinkRaw)
+        public
+        view
+        returns (uint256 ustbInAmount, uint256 usdPerUstbChainlinkRaw)
     {
         if (usdcOutAmount == 0) revert BadArgs();
 
@@ -220,12 +222,11 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
 
         usdPerUstbChainlinkRaw = usdPerUstbChainlinkRaw_;
 
-        // Calculate USDC out amount:
-        // 1. Convert SUPERSTATE_TOKEN to USD using Chainlink price
-        // 2. Convert USD amount to USDC (assuming 1:1 rate)
-        // 3. Handle decimal precision conversions between SUPERSTATE_TOKEN and USDC
-        usdcOutAmount = (superstateTokenInAmount * usdPerUstbChainlinkRaw * USDC_PRECISION)
+        uint256 rawUsdcAmount = (superstateTokenInAmount * usdPerUstbChainlinkRaw * USDC_PRECISION)
             / (CHAINLINK_FEED_PRECISION * SUPERSTATE_TOKEN_PRECISION);
+
+        uint256 fee = calculateFee(rawUsdcAmount);
+        usdcOutAmount = rawUsdcAmount - fee;
     }
 
     /// @notice Abstract function that must be implemented by derived contracts
