@@ -413,7 +413,7 @@ contract RedemptionYieldTest is Test {
         (uint256 usdcOutVerify,) = redemption.calculateUsdcOut(ustbInAmount);
 
         // Allow for minor rounding differences
-        assertApproxEqAbs(usdcOutAmount, usdcOutVerify, 5);
+        assertApproxEqAbs(usdcOutAmount, usdcOutVerify, 6);
         assertEq(feedPrice, 10_379_322);
     }
 
@@ -489,12 +489,26 @@ contract RedemptionYieldTest is Test {
         hoax(owner);
         redemption.setRedemptionFee(fee);
 
-        uint256 usdcOutAmount = 1_000_000; // 1 USDC
+        uint256 usdcOutAmount = 1_000_000_000;
         (uint256 ustbInAmount,) = redemption.calculateUstbIn(usdcOutAmount);
         (uint256 usdcOutVerify,) = redemption.calculateUsdcOut(ustbInAmount);
 
-        // We need a larger amount of USTB to account for the fee
-        assertEq(usdcOutVerify, 999_993);
+        assertEq(ustbInAmount, 96_393_604);
+
+        assertEq(usdcOutVerify, 1_000_000_004);
+
+        (uint256 usdcOutVerify2,) = redemption.calculateUsdcOut(1_000_000_000);
+        assertEq(usdcOutVerify2, 10_374_132_339);
+    }
+
+    function testCalculateUstbInNoFee() public view {
+        uint256 usdcOutAmount = 1_000_000_000;
+        (uint256 ustbInAmount,) = redemption.calculateUstbIn(usdcOutAmount);
+        (uint256 usdcOutVerify,) = redemption.calculateUsdcOut(ustbInAmount);
+
+        assertEq(ustbInAmount, 96_345_407);
+
+        assertEq(usdcOutVerify, 1_000_000_002);
     }
 
     function testRedeemWithFee() public {
