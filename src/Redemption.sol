@@ -60,7 +60,7 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
     address public sweepDestination;
 
     // @notice A fee charged on incoming USDC
-    uint96 public redemptionFee;
+    uint256 public redemptionFee;
 
     /**
      * @dev This empty reserved space is put in place to allow future versions to add new fields without impacting
@@ -87,7 +87,7 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
         address initialOwner,
         uint256 _maximumOracleDelay,
         address _sweepDestination,
-        uint96 _redemptionFee
+        uint256 _redemptionFee
     ) external initializer {
         __Ownable_init(initialOwner);
         __Ownable2Step_init();
@@ -111,7 +111,7 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
         return (amount * redemptionFee) / FEE_DENOMINATOR;
     }
 
-    function _setRedemptionFee(uint96 _newFee) internal {
+    function _setRedemptionFee(uint256 _newFee) internal {
         if (_newFee > 10) revert FeeTooHigh(); // Max 0.1% fee
         if (redemptionFee == _newFee) revert BadArgs();
         emit SetRedemptionFee({oldFee: redemptionFee, newFee: _newFee});
@@ -122,7 +122,7 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
     /// @dev Only callable by the admin
     /// @dev Fee cannot exceed 10 basis points (0.1%)
     /// @param _newFee New fee in basis points. 1 = 0.01%, 5 = 0.05%, 10 = 0.1%
-    function setRedemptionFee(uint96 _newFee) external {
+    function setRedemptionFee(uint256 _newFee) external {
         _checkOwner();
         _setRedemptionFee(_newFee);
     }

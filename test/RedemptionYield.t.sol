@@ -466,7 +466,7 @@ contract RedemptionYieldTest is Test {
     }
 
     function testSetRedemptionFeeSameFail() public {
-        uint96 oldFee = redemption.redemptionFee();
+        uint256 oldFee = redemption.redemptionFee();
 
         hoax(owner);
         vm.expectRevert(IRedemption.BadArgs.selector);
@@ -474,7 +474,7 @@ contract RedemptionYieldTest is Test {
     }
 
     function testCalculateFee() public {
-        uint96 fee = 5; // 0.05%
+        uint256 fee = 5; // 0.05%
         hoax(owner);
         redemption.setRedemptionFee(fee);
 
@@ -485,7 +485,7 @@ contract RedemptionYieldTest is Test {
     }
 
     function testCalculateUstbInWithFee() public {
-        uint96 fee = 5; // 0.05%
+        uint256 fee = 5; // 0.05%
         hoax(owner);
         redemption.setRedemptionFee(fee);
 
@@ -498,7 +498,7 @@ contract RedemptionYieldTest is Test {
     }
 
     function testRedeemWithFee() public {
-        uint96 fee = 5; // 0.05%
+        uint256 fee = 5; // 0.05%
         hoax(owner);
         redemption.setRedemptionFee(fee);
 

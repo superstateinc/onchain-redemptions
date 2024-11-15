@@ -15,7 +15,7 @@ interface IRedemption {
     /// @notice The ```SetRedemptionFee``` event is emitted when the redemption fee is set
     /// @param oldFee The old fee
     /// @param newFee The new fee
-    event SetRedemptionFee(uint96 oldFee, uint96 newFee);
+    event SetRedemptionFee(uint256 oldFee, uint256 newFee);
 
     /// @dev Event emitted when SUPERSTATE_TOKEN is redeemed for USDC
     /// @param redeemer The address of the entity redeeming
@@ -55,12 +55,12 @@ interface IRedemption {
     function maxUstbRedemptionAmount() external view returns (uint256 _superstateTokenAmount);
     function maximumOracleDelay() external view returns (uint256);
     function sweepDestination() external view returns (address);
-    function redemptionFee() external view returns (uint96);
+    function redemptionFee() external view returns (uint256);
     function pause() external;
     function redeem(uint256 superstateTokenInAmount) external;
     function setMaximumOracleDelay(uint256 _newMaxOracleDelay) external;
     function setSweepDestination(address _newSweepDestination) external;
-    function setRedemptionFee(uint96 _newFee) external;
+    function setRedemptionFee(uint256 _newFee) external;
     function unpause() external;
     function withdraw(address _token, address to, uint256 amount) external;
     function withdrawToSweepDestination(uint256 amount) external;
@@ -68,6 +68,6 @@ interface IRedemption {
         address initialOwner,
         uint256 _maximumOracleDelay,
         address _sweepDestination,
-        uint96 _redemptionFeeu
+        uint256 _redemptionFee
     ) external;
 }
