@@ -209,9 +209,9 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
      * @return usdPerUstbChainlinkRaw The raw chainlink price used in calculation
      */
     function calculateUsdcOut(uint256 superstateTokenInAmount)
-        public
-        view
-        returns (uint256 usdcOutAmount, uint256 usdPerUstbChainlinkRaw)
+    public
+    view
+    returns (uint256 usdcOutAmount, uint256 usdPerUstbChainlinkRaw)
     {
         if (superstateTokenInAmount == 0) revert BadArgs();
 
@@ -220,12 +220,11 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
 
         usdPerUstbChainlinkRaw = usdPerUstbChainlinkRaw_;
 
-        // Calculate USDC out amount:
-        // 1. Convert SUPERSTATE_TOKEN to USD using Chainlink price
-        // 2. Convert USD amount to USDC (assuming 1:1 rate)
-        // 3. Handle decimal precision conversions between SUPERSTATE_TOKEN and USDC
-        usdcOutAmount = (superstateTokenInAmount * usdPerUstbChainlinkRaw * USDC_PRECISION)
+        uint256 rawUsdcAmount = (superstateTokenInAmount * usdPerUstbChainlinkRaw * USDC_PRECISION)
             / (CHAINLINK_FEED_PRECISION * SUPERSTATE_TOKEN_PRECISION);
+
+        uint256 fee = calculateFee(rawUsdcAmount);
+        usdcOutAmount = rawUsdcAmount - fee;
     }
 
     /// @notice Abstract function that must be implemented by derived contracts

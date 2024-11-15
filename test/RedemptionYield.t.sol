@@ -494,7 +494,7 @@ contract RedemptionYieldTest is Test {
         (uint256 usdcOutVerify,) = redemption.calculateUsdcOut(ustbInAmount);
 
         // We need a larger amount of USTB to account for the fee
-        assertEq(usdcOutVerify, 1_000_493);
+        assertEq(usdcOutVerify, 999_993);
     }
 
     function testRedeemWithFee() public {
@@ -510,6 +510,6 @@ contract RedemptionYieldTest is Test {
         vm.stopPrank();
 
         uint256 redeemerUsdcBalance = USDC.balanceOf(SUPERSTATE_TOKEN_HOLDER);
-        assertEq(redeemerUsdcBalance, 9_999_999_999_996); // Original test value
+        assertEq(redeemerUsdcBalance, 9_994_999_999_997);
     }
 }
