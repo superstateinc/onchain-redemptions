@@ -205,9 +205,6 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
 
         usdPerUstbChainlinkRaw = usdPerUstbChainlinkRaw_;
 
-//        ustbInAmount = (usdcOutAmountWithFee * CHAINLINK_FEED_PRECISION * SUPERSTATE_TOKEN_PRECISION)
-//            / (usdPerUstbChainlinkRaw * USDC_PRECISION);
-
         // Round up by adding the denominator - 1 before division
         uint256 numerator = usdcOutAmountWithFee * CHAINLINK_FEED_PRECISION * SUPERSTATE_TOKEN_PRECISION;
         uint256 denominator = usdPerUstbChainlinkRaw * USDC_PRECISION;
