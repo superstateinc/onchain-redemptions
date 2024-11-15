@@ -142,7 +142,7 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
     }
 
     function _setSweepDestination(address _newSweepDestination) internal {
-        if (sweepDestination == _newSweepDestination) revert BadArgs();
+        if (sweepDestination == _newSweepDestination || _newSweepDestination == address(0)) revert BadArgs();
         emit SetSweepDestination({oldSweepDestination: sweepDestination, newSweepDestination: _newSweepDestination});
         sweepDestination = _newSweepDestination;
     }
