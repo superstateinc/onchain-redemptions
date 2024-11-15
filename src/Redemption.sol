@@ -83,10 +83,12 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
         _disableInitializers();
     }
 
-    function initialize(address initialOwner, uint256 _maximumOracleDelay, address _sweepDestination, uint96 _redemptionFee)
-        external
-        initializer
-    {
+    function initialize(
+        address initialOwner,
+        uint256 _maximumOracleDelay,
+        address _sweepDestination,
+        uint96 _redemptionFee
+    ) external initializer {
         __Ownable_init(initialOwner);
         __Ownable2Step_init();
 
@@ -185,9 +187,9 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
      * @return usdPerUstbChainlinkRaw The raw chainlink price used in calculation
      */
     function calculateUstbIn(uint256 usdcOutAmount)
-    public
-    view
-    returns (uint256 ustbInAmount, uint256 usdPerUstbChainlinkRaw)
+        public
+        view
+        returns (uint256 ustbInAmount, uint256 usdPerUstbChainlinkRaw)
     {
         if (usdcOutAmount == 0) revert BadArgs();
 
@@ -209,9 +211,9 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
      * @return usdPerUstbChainlinkRaw The raw chainlink price used in calculation
      */
     function calculateUsdcOut(uint256 superstateTokenInAmount)
-    public
-    view
-    returns (uint256 usdcOutAmount, uint256 usdPerUstbChainlinkRaw)
+        public
+        view
+        returns (uint256 usdcOutAmount, uint256 usdPerUstbChainlinkRaw)
     {
         if (superstateTokenInAmount == 0) revert BadArgs();
 

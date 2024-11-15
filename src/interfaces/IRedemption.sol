@@ -64,5 +64,10 @@ interface IRedemption {
     function unpause() external;
     function withdraw(address _token, address to, uint256 amount) external;
     function withdrawToSweepDestination(uint256 amount) external;
-    function initialize(address initialOwner, uint256 _maximumOracleDelay, address _sweepDestination, uint96 _redemptionFeeu) external;
+    function initialize(
+        address initialOwner,
+        uint256 _maximumOracleDelay,
+        address _sweepDestination,
+        uint96 _redemptionFeeu
+    ) external;
 }
