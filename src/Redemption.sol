@@ -193,15 +193,17 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
     {
         if (usdcOutAmount == 0) revert BadArgs();
 
-        uint256 usdcOutAmountWithFee = usdcOutAmount + calculateFee(usdcOutAmount);
+        uint256 usdcOutAmountWithFee = (usdcOutAmount * FEE_DENOMINATOR) / (FEE_DENOMINATOR - redemptionFee);
 
         (bool isBadData,, uint256 usdPerUstbChainlinkRaw_) = _getChainlinkPrice();
         if (isBadData) revert BadChainlinkData();
 
         usdPerUstbChainlinkRaw = usdPerUstbChainlinkRaw_;
 
-        ustbInAmount = (usdcOutAmountWithFee * CHAINLINK_FEED_PRECISION * SUPERSTATE_TOKEN_PRECISION)
-            / (usdPerUstbChainlinkRaw * USDC_PRECISION);
+        // Round up by adding the denominator - 1 before division
+        uint256 numerator = usdcOutAmountWithFee * CHAINLINK_FEED_PRECISION * SUPERSTATE_TOKEN_PRECISION;
+        uint256 denominator = usdPerUstbChainlinkRaw * USDC_PRECISION;
+        ustbInAmount = (numerator + denominator - 1) / denominator;
     }
 
     /**
