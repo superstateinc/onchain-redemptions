@@ -423,6 +423,9 @@ contract RedemptionIdleTest is Test {
         assertEq(usdcOutVerify, 1_000_000_004);
 
         (uint256 usdcOutVerify2,) = redemption.calculateUsdcOut(1_000_000_000);
+        // oraclePrice * ustbInAmount * (1-fee) / 1e6
+        // 10379322 * 1000000000 * (1-0.0005) / 1e6
+        // 10,374,132,339
         assertEq(usdcOutVerify2, 10_374_132_339);
     }
 

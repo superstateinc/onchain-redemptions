@@ -193,11 +193,6 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
     {
         if (usdcOutAmount == 0) revert BadArgs();
 
-        // Calculate the gross amount needed to achieve desired net output after fee
-        // If x is gross amount: x - (x * redemptionFee / FEE_DENOMINATOR) = usdcOutAmount
-        // Solving for x: x * (1 - redemptionFee/FEE_DENOMINATOR) = usdcOutAmount
-        // x = usdcOutAmount / (1 - redemptionFee/FEE_DENOMINATOR)
-        // x = usdcOutAmount * FEE_DENOMINATOR / (FEE_DENOMINATOR - redemptionFee)
         uint256 usdcOutAmountWithFee = (usdcOutAmount * FEE_DENOMINATOR) / (FEE_DENOMINATOR - redemptionFee);
 
         (bool isBadData,, uint256 usdPerUstbChainlinkRaw_) = _getChainlinkPrice();
