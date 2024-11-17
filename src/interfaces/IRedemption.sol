@@ -42,6 +42,9 @@ interface IRedemption {
     /// @dev Thrown when there isn't enough token balance in the contract
     error InsufficientBalance();
 
+    /// @dev Thrown if an attempt to call `renounceOwnership` is made
+    error RenounceOwnershipDisabled();
+
     function getChainlinkPrice() external view returns (bool _isBadData, uint256 _updatedAt, uint256 _price);
     function calculateUsdcOut(uint256 superstateTokenInAmount)
         external

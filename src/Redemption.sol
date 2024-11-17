@@ -251,4 +251,8 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
     function withdrawToSweepDestination(uint256 amount) external {
         withdraw({_token: address(USDC), to: sweepDestination, amount: amount});
     }
+
+    function renounceOwnership() public virtual override onlyOwner {
+        revert RenounceOwnershipDisabled();
+    }
 }
