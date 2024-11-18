@@ -231,7 +231,7 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
         usdcOutAmount = rawUsdcAmount - fee;
     }
 
-    /// @notice The ```maxUstbRedemptionAmount``` function returns the maximum amount of SUPERSTATE_TOKEN that can be redeemed based on the amount of USDC in the contract
+    /// @notice Abstract function that must be implemented by derived contracts
     /// @return superstateTokenAmount The maximum amount of SUPERSTATE_TOKEN that can be redeemed
     /// @return usdPerUstbChainlinkRaw The price used to calculate the superstateTokenAmount
     function maxUstbRedemptionAmount()
