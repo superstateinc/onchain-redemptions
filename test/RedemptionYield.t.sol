@@ -213,7 +213,7 @@ contract RedemptionYieldTest is Test {
         assertEq(USDC.balanceOf(SUPERSTATE_TOKEN_HOLDER), 0);
 
         uint256 superstateTokenBalance = SUPERSTATE_TOKEN.balanceOf(SUPERSTATE_TOKEN_HOLDER);
-        uint256 superstateTokenAmount = redemption.maxUstbRedemptionAmount();
+        (uint256 superstateTokenAmount,) = redemption.maxUstbRedemptionAmount();
 
         // usdc balance * 1e6 (chainlink precision) * 1e6 (superstateToken precision) / feed price * 1e6 (usdc precision)
         // 1e13 * 1e6 / (real-time NAV/S price)
@@ -265,7 +265,7 @@ contract RedemptionYieldTest is Test {
     }
 
     function testRedeemFuzz(uint256 superstateTokenRedeemAmount) public {
-        uint256 maxRedemptionAmount = redemption.maxUstbRedemptionAmount();
+        (uint256 maxRedemptionAmount,) = redemption.maxUstbRedemptionAmount();
 
         superstateTokenRedeemAmount = bound(superstateTokenRedeemAmount, 1, maxRedemptionAmount);
 
@@ -519,7 +519,7 @@ contract RedemptionYieldTest is Test {
         hoax(owner);
         redemption.setRedemptionFee(fee);
 
-        uint256 superstateTokenAmount = redemption.maxUstbRedemptionAmount();
+        (uint256 superstateTokenAmount,) = redemption.maxUstbRedemptionAmount();
 
         vm.startPrank(SUPERSTATE_TOKEN_HOLDER);
         SUPERSTATE_TOKEN.approve(address(redemption), superstateTokenAmount);
@@ -527,6 +527,6 @@ contract RedemptionYieldTest is Test {
         vm.stopPrank();
 
         uint256 redeemerUsdcBalance = USDC.balanceOf(SUPERSTATE_TOKEN_HOLDER);
-        assertEq(redeemerUsdcBalance, 9_994_999_999_997);
+        assertEq(redeemerUsdcBalance, 9_999_999_999_998);
     }
 }

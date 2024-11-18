@@ -55,7 +55,10 @@ interface IRedemption {
         view
         returns (uint256 ustbInAmount, uint256 usdPerUstbChainlinkRaw);
     function calculateFee(uint256 amount) external view returns (uint256);
-    function maxUstbRedemptionAmount() external view returns (uint256 _superstateTokenAmount);
+    function maxUstbRedemptionAmount()
+        external
+        view
+        returns (uint256 superstateTokenAmount, uint256 usdPerUstbChainlinkRaw);
     function maximumOracleDelay() external view returns (uint256);
     function sweepDestination() external view returns (address);
     function redemptionFee() external view returns (uint256);

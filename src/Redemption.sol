@@ -232,8 +232,13 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
     }
 
     /// @notice Abstract function that must be implemented by derived contracts
-    /// @return _superstateTokenAmount The maximum amount of SUPERSTATE_TOKEN that can be redeemed
-    function maxUstbRedemptionAmount() external view virtual returns (uint256 _superstateTokenAmount);
+    /// @return superstateTokenAmount The maximum amount of SUPERSTATE_TOKEN that can be redeemed
+    /// @return usdPerUstbChainlinkRaw The price used to calculate the superstateTokenAmount
+    function maxUstbRedemptionAmount()
+        external
+        view
+        virtual
+        returns (uint256 superstateTokenAmount, uint256 usdPerUstbChainlinkRaw);
 
     /// @notice Abstract function that must be implemented by derived contracts
     /// @param superstateTokenInAmount The amount of SUPERSTATE_TOKEN to redeem
