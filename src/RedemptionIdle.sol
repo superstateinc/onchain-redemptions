@@ -22,10 +22,24 @@ contract RedemptionIdle is Redemption {
     {}
 
     /// @notice The ```maxUstbRedemptionAmount``` function returns the maximum amount of SUPERSTATE_TOKEN that can be redeemed based on the amount of USDC in the contract
-    /// @return _superstateTokenAmount The maximum amount of SUPERSTATE_TOKEN that can be redeemed
-    function maxUstbRedemptionAmount() external view override returns (uint256 _superstateTokenAmount) {
-        (,, uint256 usdPerUstbChainlinkRaw) = _getChainlinkPrice();
-        _superstateTokenAmount = (USDC.balanceOf(address(this)) * CHAINLINK_FEED_PRECISION * SUPERSTATE_TOKEN_PRECISION)
+    /// @return superstateTokenAmount The maximum amount of SUPERSTATE_TOKEN that can be redeemed
+    /// @return usdPerUstbChainlinkRaw The price used to calculate the superstateTokenAmount
+    function maxUstbRedemptionAmount()
+        external
+        view
+        override
+        returns (uint256 superstateTokenAmount, uint256 usdPerUstbChainlinkRaw)
+    {
+        uint256 usdcOutAmountWithFee =
+            (USDC.balanceOf(address(this)) * FEE_DENOMINATOR) / (FEE_DENOMINATOR - redemptionFee);
+
+        (bool isBadData,, uint256 usdPerUstbChainlinkRaw_) = _getChainlinkPrice();
+        if (isBadData) revert BadChainlinkData();
+
+        usdPerUstbChainlinkRaw = usdPerUstbChainlinkRaw_;
+
+        // Round down, unlike `calculateUstbIn`, that way user doesn't send in more USTB than can be redeemed
+        superstateTokenAmount = (usdcOutAmountWithFee * CHAINLINK_FEED_PRECISION * SUPERSTATE_TOKEN_PRECISION)
             / (usdPerUstbChainlinkRaw * USDC_PRECISION);
     }
 
