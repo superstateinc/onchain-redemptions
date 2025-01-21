@@ -57,7 +57,7 @@ interface ISuperstateTokenV2 {
     function pause() external;
     function paused() external view returns (bool);
     function permit(address owner, address spender, uint256 amount, uint256 expiry, uint8 v, bytes32 r, bytes32 s)
-    external;
+        external;
     function release(address owner, uint256 amount) external;
     function symbol() external view returns (string memory);
     function totalSupply() external view returns (uint256);

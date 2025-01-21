@@ -18,17 +18,17 @@ contract RedemptionIdleV1 is Redemption {
     uint256[500] private __inheritanceGap;
 
     constructor(address _superstateToken, address _superstateTokenChainlinkFeedAddress, address _usdc)
-    Redemption(_superstateToken, _superstateTokenChainlinkFeedAddress, _usdc)
+        Redemption(_superstateToken, _superstateTokenChainlinkFeedAddress, _usdc)
     {}
 
     /// @notice The ```maxUstbRedemptionAmount``` function returns the maximum amount of SUPERSTATE_TOKEN that can be redeemed based on the amount of USDC in the contract
     /// @return superstateTokenAmount The maximum amount of SUPERSTATE_TOKEN that can be redeemed
     /// @return usdPerUstbChainlinkRaw The price used to calculate the superstateTokenAmount
     function maxUstbRedemptionAmount()
-    external
-    view
-    override
-    returns (uint256 superstateTokenAmount, uint256 usdPerUstbChainlinkRaw)
+        external
+        view
+        override
+        returns (uint256 superstateTokenAmount, uint256 usdPerUstbChainlinkRaw)
     {
         uint256 usdcOutAmountWithFee =
             (USDC.balanceOf(address(this)) * FEE_DENOMINATOR) / (FEE_DENOMINATOR - redemptionFee);

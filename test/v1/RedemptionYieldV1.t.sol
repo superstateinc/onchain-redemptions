@@ -49,7 +49,7 @@ contract RedemptionYieldTestV1 is Test {
         return address(uint160(uint256(adminSlot)));
     }
 
-    function setUp() virtual public {
+    function setUp() public virtual {
         vm.createSelectFork(vm.envString("ETH_RPC_URL"), 19_976_215);
         vm.roll(20_993_400);
 
@@ -226,7 +226,7 @@ contract RedemptionYieldTestV1 is Test {
         vm.stopPrank();
     }
 
-    function testRedeem() virtual public {
+    function testRedeem() public virtual {
         assertEq(USDC.balanceOf(SUPERSTATE_TOKEN_HOLDER), 0);
 
         uint256 superstateTokenBalance = SUPERSTATE_TOKEN.balanceOf(SUPERSTATE_TOKEN_HOLDER);

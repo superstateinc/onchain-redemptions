@@ -7,10 +7,9 @@ import {IRedemption} from "src/interfaces/IRedemption.sol";
 import {ISuperstateToken} from "src/ISuperstateToken.sol";
 
 contract RedemptionYieldV2 is RedemptionYieldTestV1 {
-
     RedemptionYield public redemptionV2;
 
-    function setUp() override public {
+    function setUp() public override {
         // TODO: update test block number after deployment of new token contracts so tests pass
         super.setUp();
 
@@ -19,7 +18,7 @@ contract RedemptionYieldV2 is RedemptionYieldTestV1 {
         redemptionProxyAdmin.upgradeAndCall(redemptionProxy, address(redemptionV2), "");
     }
 
-    function testRedeem() override public {
+    function testRedeem() public override {
         assertEq(USDC.balanceOf(SUPERSTATE_TOKEN_HOLDER), 0);
 
         uint256 superstateTokenBalance = SUPERSTATE_TOKEN.balanceOf(SUPERSTATE_TOKEN_HOLDER);
@@ -72,6 +71,5 @@ contract RedemptionYieldV2 is RedemptionYieldTestV1 {
         assertEq(redemptionContractCusdcBalance, lostToRounding);
         assertEq(redemptionContractCusdcBalance, 4 - lostToRounding);
         assertEq(redemptionContractCusdcBalance, USDC_AMOUNT - redeemerUsdcBalance - lostToRounding);
-
     }
 }

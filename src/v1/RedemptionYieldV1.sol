@@ -36,10 +36,10 @@ contract RedemptionYieldV1 is Redemption {
     /// @return superstateTokenAmount The maximum amount of SUPERSTATE_TOKEN that can be redeemed
     /// @return usdPerUstbChainlinkRaw The price used to calculate the superstateTokenAmount
     function maxUstbRedemptionAmount()
-    external
-    view
-    override
-    returns (uint256 superstateTokenAmount, uint256 usdPerUstbChainlinkRaw)
+        external
+        view
+        override
+        returns (uint256 superstateTokenAmount, uint256 usdPerUstbChainlinkRaw)
     {
         uint256 usdcOutAmountWithFee =
             (COMPOUND.balanceOf(address(this)) * FEE_DENOMINATOR) / (FEE_DENOMINATOR - redemptionFee);
