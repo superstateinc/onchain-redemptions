@@ -34,6 +34,7 @@ contract RedemptionIdleTest is Test {
     IRedemptionIdle public redemption;
 
     function setUp() public {
+        // TODO: update test block number after deployment of new token contracts so tests pass
         vm.createSelectFork(vm.envString("ETH_RPC_URL"), 19_976_215);
         vm.roll(20_993_400);
 
@@ -165,9 +166,9 @@ contract RedemptionIdleTest is Test {
             value: superstateTokenAmount
         });
         vm.expectEmit(true, true, true, true);
-        emit ISuperstateToken.Burn({
+        emit ISuperstateToken.OffchainRedeem({
             burner: address(redemption),
-            from: address(redemption),
+            src: address(redemption),
             amount: superstateTokenAmount
         });
         vm.expectEmit(true, true, true, true);

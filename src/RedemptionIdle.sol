@@ -55,7 +55,7 @@ contract RedemptionIdle is Redemption {
 
         SUPERSTATE_TOKEN.safeTransferFrom({from: msg.sender, to: address(this), value: superstateTokenInAmount});
         USDC.safeTransfer({to: msg.sender, value: usdcOutAmount});
-        ISuperstateToken(address(SUPERSTATE_TOKEN)).burn(superstateTokenInAmount);
+        ISuperstateToken(address(SUPERSTATE_TOKEN)).offchainRedeem(superstateTokenInAmount);
 
         emit Redeem({
             redeemer: msg.sender,

@@ -66,7 +66,7 @@ contract RedemptionYield is Redemption {
 
         SUPERSTATE_TOKEN.safeTransferFrom({from: msg.sender, to: address(this), value: superstateTokenInAmount});
         COMPOUND.withdrawTo({to: msg.sender, asset: address(USDC), amount: usdcOutAmount});
-        ISuperstateToken(address(SUPERSTATE_TOKEN)).burn(superstateTokenInAmount);
+        ISuperstateToken(address(SUPERSTATE_TOKEN)).offchainRedeem(superstateTokenInAmount);
 
         emit Redeem({
             redeemer: msg.sender,
