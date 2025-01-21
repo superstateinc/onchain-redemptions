@@ -2,12 +2,12 @@
 pragma solidity ^0.8.28;
 
 import {Script, console} from "forge-std/Script.sol";
-import {RedemptionYield} from "../src/RedemptionYield.sol";
+import {RedemptionYieldV1} from "../src/v1/RedemptionYieldV1.sol";
 import {IRedemption} from "src/interfaces/IRedemption.sol";
 
 import "openzeppelin-contracts/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
-function deployRedemptionYield(
+function deployRedemptionYieldV1(
     address ustb,
     address oracle,
     address usdc,
@@ -27,7 +27,7 @@ function deployRedemptionYield(
 {
     _constructorParams = abi.encode(ustb, oracle, usdc);
     _contractName = "";
-    _implementation = payable(address(new RedemptionYield(ustb, oracle, usdc, compound)));
+    _implementation = payable(address(new RedemptionYieldV1(ustb, oracle, usdc, compound)));
 
     TransparentUpgradeableProxy redemptionProxy =
         new TransparentUpgradeableProxy(address(_implementation), proxyOwner, "");
@@ -63,7 +63,7 @@ contract DeployRedemptionYield is Script {
         returns (address payable _address, bytes memory _constructorParams, string memory _contractName, address _proxy)
     {
         vm.startBroadcast(deployer);
-        (_address, _constructorParams, _contractName, _proxy) = deployRedemptionYield(
+        (_address, _constructorParams, _contractName, _proxy) = deployRedemptionYieldV1(
             USTB,
             USTB_NAVS_ORACLE,
             USDC,

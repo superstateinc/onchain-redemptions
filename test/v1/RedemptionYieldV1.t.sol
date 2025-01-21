@@ -2,20 +2,25 @@
 pragma solidity ^0.8.28;
 
 import {Test, console} from "forge-std/Test.sol";
+import {Vm} from "forge-std/Vm.sol";
+
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {Ownable} from "openzeppelin-contracts/contracts/access/Ownable.sol";
 import {Pausable} from "openzeppelin-contracts/contracts/utils/Pausable.sol";
 import {AllowList} from "ustb/src/AllowList.sol";
-import {Redemption} from "../src/Redemption.sol";
+import {Redemption} from "src/Redemption.sol";
 import {IRedemption} from "src/interfaces/IRedemption.sol";
-import {IRedemptionIdle} from "src/interfaces/IRedemptionIdle.sol";
-import {ISuperstateToken} from "../src/ISuperstateToken.sol";
-import {IComet} from "../src/IComet.sol";
-import {deployRedemptionIdle} from "../script/RedemptionIdle.s.sol";
-import {SuperstateOracle} from "../src/oracle/SuperstateOracle.sol";
-import {deploySuperstateOracle} from "../script/SuperstateOracle.s.sol";
+import {IRedemptionYield} from "src/interfaces/IRedemptionYield.sol";
+import {ISuperstateTokenV2} from "src/interfaces/ISuperstateTokenV2.sol";
+import {IComet} from "src/IComet.sol";
+import {deployRedemptionYieldV1} from "script/RedemptionYield.s.sol";
+import {SuperstateOracle} from "src/oracle/SuperstateOracle.sol";
+import {deploySuperstateOracle} from "script/SuperstateOracle.s.sol";
 
-contract RedemptionIdleTest is Test {
+import "openzeppelin-contracts/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import "openzeppelin-contracts/contracts/proxy/transparent/ProxyAdmin.sol";
+
+contract RedemptionYieldTestV1 is Test {
     address public owner = address(this);
 
     AllowList public constant allowList = AllowList(0x42d75C8FdBBF046DF0Fe1Ff388DA16fF99dE8149);
@@ -23,6 +28,7 @@ contract RedemptionIdleTest is Test {
 
     IERC20 public constant SUPERSTATE_TOKEN = IERC20(0x43415eB6ff9DB7E26A15b704e7A3eDCe97d31C4e);
     IERC20 public constant USDC = IERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
+    IComet public constant COMPOUND = IComet(0xc3d688B66703497DAA19211EEdff47f25384cdc3);
     address public constant SUPERSTATE_TOKEN_HOLDER = 0xB8851D8fdd9a007A33f6b45BF602046644aBE81f;
 
     uint256 public constant USDC_AMOUNT = 1e13;
@@ -31,10 +37,19 @@ contract RedemptionIdleTest is Test {
     uint256 public constant MAXIMUM_ORACLE_DELAY = 93_600;
 
     SuperstateOracle public oracle;
-    IRedemptionIdle public redemption;
+    IRedemptionYield public redemption;
+    ITransparentUpgradeableProxy public redemptionProxy;
+    ProxyAdmin public redemptionProxyAdmin;
 
-    function setUp() public {
-        // TODO: update test block number after deployment of new token contracts so tests pass
+    function getAdminAddress(address _proxy) internal view returns (address) {
+        address CHEATCODE_ADDRESS = 0x7109709ECfa91a80626fF3989D68f67F5b1DD12D;
+        Vm vm = Vm(CHEATCODE_ADDRESS);
+
+        bytes32 adminSlot = vm.load(_proxy, ERC1967Utils.ADMIN_SLOT);
+        return address(uint160(uint256(adminSlot)));
+    }
+
+    function setUp() virtual public {
         vm.createSelectFork(vm.envString("ETH_RPC_URL"), 19_976_215);
         vm.roll(20_993_400);
 
@@ -51,14 +66,8 @@ contract RedemptionIdleTest is Test {
 
         hoax(owner);
         oracle.addCheckpoint(uint64(1726866000), 1726866001, 10_379_322, false);
-        // result = laterCheckpointNavs + ((laterCheckpointNavs - earlierCheckpointNavs) * (targetTimestamp - laterCheckpointTimestamp)) / (laterCheckpointTimestamp - earlierCheckpointTimestamp)
 
-        // 4460 diff between navs = 1726866000 - 1726779600
-        // 86,400 seconds between checkpoints
-        // diff between
-        // 10379322 + 4460* 1 / 86,400 = 10,379,322 interpolated nav/s
-
-        (,,, address proxy) = deployRedemptionIdle(
+        (,,, address proxy) = deployRedemptionYieldV1(
             address(SUPERSTATE_TOKEN),
             address(oracle),
             address(USDC),
@@ -66,27 +75,104 @@ contract RedemptionIdleTest is Test {
             address(this),
             MAXIMUM_ORACLE_DELAY,
             address(this),
-            0
+            0,
+            address(COMPOUND)
         );
 
-        redemption = IRedemptionIdle(address(proxy));
-
-        // 10 million
-        deal(address(USDC), SUPERSTATE_TOKEN_HOLDER, USDC_AMOUNT);
-
-        hoax(SUPERSTATE_TOKEN_HOLDER);
-        USDC.transfer(address(redemption), USDC_AMOUNT);
-
-        assertGe(USDC.balanceOf(address(redemption)), 0);
+        redemption = IRedemptionYield(address(proxy));
+        redemptionProxy = ITransparentUpgradeableProxy(payable(proxy));
+        redemptionProxyAdmin = ProxyAdmin(getAdminAddress(address(redemptionProxy)));
 
         vm.startPrank(allowListAdmin);
         allowList.setEntityIdForAddress(ENTITY_ID, address(redemption));
+
         vm.stopPrank();
+
+        deal(address(USDC), owner, USDC_AMOUNT);
+
+        vm.startPrank(owner);
+        USDC.approve(address(redemption), USDC_AMOUNT);
+        vm.expectEmit(true, true, true, true);
+        emit IRedemptionYield.Deposit({token: address(USDC), depositor: owner, amount: USDC_AMOUNT});
+        redemption.deposit(USDC_AMOUNT);
+        vm.stopPrank();
+
+        assertEq(USDC.balanceOf(address(redemption)), 0);
+        assertGt(COMPOUND.balanceOf(address(redemption)), 0);
+    }
+
+    function testDepositUnauthorized() public {
+        vm.startPrank(SUPERSTATE_TOKEN_HOLDER);
+        USDC.approve(address(redemption), 0);
+        vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, SUPERSTATE_TOKEN_HOLDER));
+        redemption.deposit(0);
+        vm.stopPrank();
+    }
+
+    function testDepositBadArgs() public {
+        vm.startPrank(owner);
+        USDC.approve(address(redemption), 0);
+        vm.expectRevert(IRedemption.BadArgs.selector);
+        redemption.deposit(0);
+        vm.stopPrank();
+    }
+
+    function testInterestWithdraw() public {
+        uint256 initialBalance = COMPOUND.balanceOf(address(redemption));
+        uint256 ts = block.timestamp;
+
+        vm.roll(19_976_215 + 5_000);
+        vm.warp(ts + (5_000 * 12));
+
+        COMPOUND.accrueAccount(address(redemption));
+
+        uint256 interestBalance = COMPOUND.balanceOf(address(redemption));
+
+        assertGt(interestBalance, initialBalance, "Interest accrues over time");
+
+        hoax(owner);
+        vm.expectEmit(true, true, true, true);
+        emit IRedemption.Withdraw({token: address(USDC), withdrawer: owner, to: owner, amount: interestBalance});
+        redemption.withdraw(address(COMPOUND), owner, interestBalance);
+
+        assertEq(0, USDC.balanceOf(address(redemption)), "No USDC in the redemption contract");
+        assertEq(interestBalance, USDC.balanceOf(owner), "USDC balance + interest went to admin");
+    }
+
+    function testMaxAmountWithdraw() public {
+        uint256 initialBalance = COMPOUND.balanceOf(address(redemption));
+        uint256 ts = block.timestamp;
+
+        vm.roll(19_976_215 + 5_000);
+        vm.warp(ts + (5_000 * 12));
+
+        COMPOUND.accrueAccount(address(redemption));
+
+        uint256 interestBalance = COMPOUND.balanceOf(address(redemption));
+
+        assertGt(interestBalance, initialBalance, "Interest accrues over time");
+
+        hoax(owner);
+        vm.expectEmit(true, true, true, true);
+        emit IRedemption.Withdraw({token: address(USDC), withdrawer: owner, to: owner, amount: interestBalance});
+        redemption.withdraw(address(COMPOUND), owner, type(uint256).max);
+
+        assertEq(0, USDC.balanceOf(address(redemption)), "No USDC in the redemption contract");
+        assertEq(interestBalance, USDC.balanceOf(owner), "USDC balance + interest went to admin");
     }
 
     function testSendEtherFail() public {
         (bool success,) = address(redemption).call{value: 1}("");
         assertFalse(success);
+    }
+
+    function testWithdraw() public {
+        hoax(owner);
+        vm.expectEmit(true, true, true, true);
+        emit IRedemption.Withdraw({token: address(USDC), withdrawer: owner, to: owner, amount: USDC_AMOUNT - 1});
+        redemption.withdraw(address(COMPOUND), owner, USDC_AMOUNT - 1);
+
+        assertEq(USDC.balanceOf(owner), USDC_AMOUNT - 1);
     }
 
     function testWithdrawUsdc() public {
@@ -140,14 +226,14 @@ contract RedemptionIdleTest is Test {
         vm.stopPrank();
     }
 
-    function testRedeem() public {
+    function testRedeem() virtual public {
         assertEq(USDC.balanceOf(SUPERSTATE_TOKEN_HOLDER), 0);
 
         uint256 superstateTokenBalance = SUPERSTATE_TOKEN.balanceOf(SUPERSTATE_TOKEN_HOLDER);
         (uint256 superstateTokenAmount,) = redemption.maxUstbRedemptionAmount();
 
         // usdc balance * 1e6 (chainlink precision) * 1e6 (superstateToken precision) / feed price * 1e6 (usdc precision)
-        // 1e13 * 1e6 / 10,379,322(real-time NAV/S price)
+        // 1e13 * 1e6 / (real-time NAV/S price)
         assertEq(superstateTokenAmount, 963454067616);
 
         assertGe(superstateTokenBalance, superstateTokenAmount, "Don't redeem more than holder has");
@@ -160,15 +246,15 @@ contract RedemptionIdleTest is Test {
         vm.startPrank(SUPERSTATE_TOKEN_HOLDER);
         SUPERSTATE_TOKEN.approve(address(redemption), superstateTokenAmount);
         vm.expectEmit(true, true, true, true);
-        emit ISuperstateToken.Transfer({
+        emit ISuperstateTokenV2.Transfer({
             from: SUPERSTATE_TOKEN_HOLDER,
             to: address(redemption),
             value: superstateTokenAmount
         });
         vm.expectEmit(true, true, true, true);
-        emit ISuperstateToken.OffchainRedeem({
+        emit ISuperstateTokenV2.Burn({
             burner: address(redemption),
-            src: address(redemption),
+            from: address(redemption),
             amount: superstateTokenAmount
         });
         vm.expectEmit(true, true, true, true);
@@ -182,15 +268,17 @@ contract RedemptionIdleTest is Test {
         vm.stopPrank();
 
         uint256 redeemerUsdcBalance = USDC.balanceOf(SUPERSTATE_TOKEN_HOLDER);
-        uint256 redemptionContractUsdcBalance = USDC.balanceOf(address(redemption));
+        uint256 redemptionContractCusdcBalance = COMPOUND.balanceOf(address(redemption));
+        uint256 lostToRounding = 2;
 
         assertEq(SUPERSTATE_TOKEN.balanceOf(SUPERSTATE_TOKEN_HOLDER), superstateTokenBalance - superstateTokenAmount);
-        assertEq(USDC_AMOUNT - redemptionContractUsdcBalance, redeemerUsdcBalance);
+        assertEq(USDC_AMOUNT - redemptionContractCusdcBalance - lostToRounding, redeemerUsdcBalance);
 
         assertEq(SUPERSTATE_TOKEN.balanceOf(address(redemption)), 0);
 
-        assertEq(redemptionContractUsdcBalance, 4);
-        assertEq(redemptionContractUsdcBalance, USDC_AMOUNT - redeemerUsdcBalance);
+        assertEq(redemptionContractCusdcBalance, lostToRounding);
+        assertEq(redemptionContractCusdcBalance, 4 - lostToRounding);
+        assertEq(redemptionContractCusdcBalance, USDC_AMOUNT - redeemerUsdcBalance - lostToRounding);
     }
 
     function testRedeemFuzz(uint256 superstateTokenRedeemAmount) public {
@@ -209,7 +297,7 @@ contract RedemptionIdleTest is Test {
 
         uint256 redeemerUstbBalanceAfter = SUPERSTATE_TOKEN.balanceOf(SUPERSTATE_TOKEN_HOLDER);
         uint256 redeemerUsdcBalanceAfter = USDC.balanceOf(SUPERSTATE_TOKEN_HOLDER);
-        uint256 redemptionContractUsdcBalanceAfter = USDC.balanceOf(address(redemption));
+        uint256 redemptionContractCusdcBalanceAfter = COMPOUND.balanceOf(address(redemption));
 
         assertEq(SUPERSTATE_TOKEN.balanceOf(address(redemption)), 0, "Contract has 0 SUPERSTATE_TOKEN balance");
 
@@ -219,14 +307,17 @@ contract RedemptionIdleTest is Test {
             "Redeemer has proper SUPERSTATE_TOKEN balance"
         );
 
-        assertEq(
+        // lose 0-3 because of rounding on compound side
+        assertApproxEqAbs(
             redeemerUsdcBalanceAfter,
-            USDC_AMOUNT - redemptionContractUsdcBalanceAfter,
+            USDC_AMOUNT - redemptionContractCusdcBalanceAfter,
+            3,
             "Redeemer has proper USDC balance"
         );
-        assertEq(
-            redemptionContractUsdcBalanceAfter,
+        assertApproxEqAbs(
+            redemptionContractCusdcBalanceAfter,
             USDC_AMOUNT - redeemerUsdcBalanceAfter,
+            3,
             "Contract has proper USDC balance"
         );
     }

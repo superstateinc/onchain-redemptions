@@ -2,12 +2,12 @@
 pragma solidity ^0.8.28;
 
 import {Script, console} from "forge-std/Script.sol";
-import {RedemptionIdle} from "../src/RedemptionIdle.sol";
+import {RedemptionIdleV1} from "../src/v1/RedemptionIdleV1.sol";
 import {IRedemption} from "src/interfaces/IRedemption.sol";
 
 import "openzeppelin-contracts/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
-function deployRedemptionIdle(
+function deployRedemptionIdleV1(
     address ustb,
     address oracle,
     address usdc,
@@ -26,7 +26,7 @@ function deployRedemptionIdle(
 {
     _constructorParams = abi.encode(ustb, oracle, usdc);
     _contractName = "";
-    _implementation = payable(address(new RedemptionIdle(ustb, oracle, usdc)));
+    _implementation = payable(address(new RedemptionIdleV1(ustb, oracle, usdc)));
 
     TransparentUpgradeableProxy redemptionProxy =
         new TransparentUpgradeableProxy(address(_implementation), proxyOwner, "");
@@ -36,7 +36,7 @@ function deployRedemptionIdle(
     IRedemption(_proxy).initialize(redemptionOwner, maximumOracleDelay, sweepDestination, fee);
 }
 
-contract DeployRedemptionIdle is Script {
+contract DeployRedemptionIdleV1 is Script {
     // all addresses are mainnet
     address constant PROXY_OWNER = address(0); // TODO
     address constant REDEMPTION_OWNER = address(0); // TODO
@@ -61,7 +61,7 @@ contract DeployRedemptionIdle is Script {
         returns (address payable _address, bytes memory _constructorParams, string memory _contractName, address _proxy)
     {
         vm.startBroadcast(deployer);
-        (_address, _constructorParams, _contractName, _proxy) = deployRedemptionIdle(
+        (_address, _constructorParams, _contractName, _proxy) = deployRedemptionIdleV1(
             USTB, USTB_NAVS_ORACLE, USDC, PROXY_OWNER, REDEMPTION_OWNER, MAXIMUM_ORACLE_DELAY, SWEEP_DESTINATION, FEE
         );
 
