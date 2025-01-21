@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.28;
 
-import {Redemption} from "./Redemption.sol";
+import {Redemption} from "src/Redemption.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
-import {ISuperstateToken} from "./ISuperstateToken.sol";
+import {ISuperstateTokenV2} from "src/interfaces/ISuperstateTokenV2.sol";
 
 /// @title RedemptionIdle
 /// @notice Implementation of Redemption that keeps USDC idle in the contract
-contract RedemptionIdle is Redemption {
+contract RedemptionIdleV1 is Redemption {
     using SafeERC20 for IERC20;
 
     /**
@@ -55,7 +55,7 @@ contract RedemptionIdle is Redemption {
 
         SUPERSTATE_TOKEN.safeTransferFrom({from: msg.sender, to: address(this), value: superstateTokenInAmount});
         USDC.safeTransfer({to: msg.sender, value: usdcOutAmount});
-        ISuperstateToken(address(SUPERSTATE_TOKEN)).offchainRedeem(superstateTokenInAmount);
+        ISuperstateTokenV2(address(SUPERSTATE_TOKEN)).burn(superstateTokenInAmount);
 
         emit Redeem({
             redeemer: msg.sender,
