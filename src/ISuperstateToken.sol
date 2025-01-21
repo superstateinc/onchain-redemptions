@@ -87,9 +87,9 @@ interface ISuperstateToken {
     function bulkMint(address[] memory dsts, uint256[] memory amounts) external;
     function calculateFee(uint256 amount, uint256 subscriptionFee) external pure returns (uint256);
     function calculateSuperstateTokenOut(uint256 inAmount, address stablecoin)
-    external
-    view
-    returns (uint256 superstateTokenOutAmount, uint256 stablecoinInAmountAfterFee, uint256 feeOnStablecoinInAmount);
+        external
+        view
+        returns (uint256 superstateTokenOutAmount, uint256 stablecoinInAmountAfterFee, uint256 feeOnStablecoinInAmount);
     function decimals() external pure returns (uint8);
     function decreaseAllowance(address spender, uint256 subtractedValue) external returns (bool);
     function getChainlinkPrice() external view returns (bool _isBadData, uint256 _updatedAt, uint256 _price);
@@ -108,7 +108,7 @@ interface ISuperstateToken {
     function paused() external view returns (bool);
     function pendingOwner() external view returns (address);
     function permit(address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s)
-    external;
+        external;
     function redemptionContract() external view returns (address);
     function renounceOwnership() external;
     function setMaximumOracleDelay(uint256 _newMaxOracleDelay) external;
