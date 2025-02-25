@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.28;
 
-import {Redemption} from "src/Redemption.sol";
+import {RedemptionV2} from "src/v2/RedemptionV2.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ISuperstateTokenV2} from "src/interfaces/ISuperstateTokenV2.sol";
 
 /// @title RedemptionIdle
 /// @notice Implementation of Redemption that keeps USDC idle in the contract
-contract RedemptionIdleV1 is Redemption {
+contract RedemptionIdleV1 is RedemptionV2 {
     using SafeERC20 for IERC20;
 
     /**
@@ -18,7 +18,7 @@ contract RedemptionIdleV1 is Redemption {
     uint256[500] private __inheritanceGap;
 
     constructor(address _superstateToken, address _superstateTokenChainlinkFeedAddress, address _usdc)
-        Redemption(_superstateToken, _superstateTokenChainlinkFeedAddress, _usdc)
+        RedemptionV2(_superstateToken, _superstateTokenChainlinkFeedAddress, _usdc)
     {}
 
     /// @notice The ```maxUstbRedemptionAmount``` function returns the maximum amount of SUPERSTATE_TOKEN that can be redeemed based on the amount of USDC in the contract

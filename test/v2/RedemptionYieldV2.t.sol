@@ -2,23 +2,24 @@
 pragma solidity ^0.8.28;
 
 import {RedemptionYieldTestV1} from "test/v1/RedemptionYieldV1.t.sol";
-import {RedemptionYield} from "src/RedemptionYield.sol";
-import {IRedemption} from "src/interfaces/IRedemption.sol";
+import {RedemptionYieldV2} from "src/v2/RedemptionYieldV2.sol";
+import {IRedemptionV2} from "src/interfaces/IRedemptionV2.sol";
 import {ISuperstateToken} from "src/ISuperstateToken.sol";
 
-contract RedemptionYieldV2 is RedemptionYieldTestV1 {
-    RedemptionYield public redemptionV2;
+contract RedemptionYieldTestV2 is RedemptionYieldTestV1 {
+    RedemptionYieldV2 public redemptionV2;
 
-    function setUp() public override {
+    function setUp() public virtual override {
         // TODO: update test block number after deployment of new token contracts so tests pass
         super.setUp();
 
-        redemptionV2 = new RedemptionYield(address(SUPERSTATE_TOKEN), address(oracle), address(USDC), address(COMPOUND));
+        redemptionV2 =
+            new RedemptionYieldV2(address(SUPERSTATE_TOKEN), address(oracle), address(USDC), address(COMPOUND));
 
         redemptionProxyAdmin.upgradeAndCall(redemptionProxy, address(redemptionV2), "");
     }
 
-    function testRedeem() public override {
+    function testRedeem() public virtual override {
         assertEq(USDC.balanceOf(SUPERSTATE_TOKEN_HOLDER), 0);
 
         uint256 superstateTokenBalance = SUPERSTATE_TOKEN.balanceOf(SUPERSTATE_TOKEN_HOLDER);
@@ -51,7 +52,7 @@ contract RedemptionYieldV2 is RedemptionYieldTestV1 {
         });
         vm.expectEmit(true, true, true, true);
         // ~1e13, the original USDC amount
-        emit IRedemption.Redeem({
+        emit IRedemptionV2.Redeem({
             redeemer: SUPERSTATE_TOKEN_HOLDER,
             superstateTokenInAmount: superstateTokenAmount,
             usdcOutAmount: 9999999999996

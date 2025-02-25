@@ -1,22 +1,22 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.28;
 
-import {Redemption} from "./Redemption.sol";
+import {RedemptionV2} from "./RedemptionV2.sol";
 import {IRedemptionYield} from "src/interfaces/IRedemptionYield.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
-import {ISuperstateToken} from "./ISuperstateToken.sol";
-import {IComet} from "./IComet.sol";
+import {ISuperstateToken} from "../ISuperstateToken.sol";
+import {IComet} from "../IComet.sol";
 
-/// @title RedemptionYield
+/// @title RedemptionYieldV2.sol
 /// @author Jon Walch and Max Wolff (Superstate) https://github.com/superstateinc
-/// @notice Implementation of Redemption that deploys idle USDC into Compound v3
-contract RedemptionYield is Redemption {
+/// @notice Implementation of RedemptionV2.sol that deploys idle USDC into Compound v3
+contract RedemptionYieldV2 is RedemptionV2 {
     using SafeERC20 for IERC20;
 
     /**
      * @dev This empty reserved space is put in place to allow future versions to inherit from new contracts
-     * without impacting the fields within `RedemptionYield`.
+     * without impacting the fields within `RedemptionYieldV2.sol`.
      */
     uint256[500] private __inheritanceGap;
 
@@ -28,7 +28,7 @@ contract RedemptionYield is Redemption {
         address _superstateTokenChainlinkFeedAddress,
         address _usdc,
         address _compound
-    ) Redemption(_superstateToken, _superstateTokenChainlinkFeedAddress, _usdc) {
+    ) RedemptionV2(_superstateToken, _superstateTokenChainlinkFeedAddress, _usdc) {
         COMPOUND = IComet(_compound);
     }
 
@@ -56,9 +56,8 @@ contract RedemptionYield is Redemption {
 
     /// @notice The ```redeem``` function allows users to redeem SUPERSTATE_TOKEN for USDC at the current oracle price
     /// @dev Will revert if oracle data is stale or there is not enough USDC in the contract
-    /// @param to The receiver address for the redeemed USDC
     /// @param superstateTokenInAmount The amount of SUPERSTATE_TOKEN to redeem
-    function redeem(address to, uint256 superstateTokenInAmount) external override {
+    function redeem(uint256 superstateTokenInAmount) external override {
         _requireNotPaused();
 
         (uint256 usdcOutAmount,) = calculateUsdcOut(superstateTokenInAmount);
@@ -69,9 +68,8 @@ contract RedemptionYield is Redemption {
         COMPOUND.withdrawTo({to: msg.sender, asset: address(USDC), amount: usdcOutAmount});
         ISuperstateToken(address(SUPERSTATE_TOKEN)).offchainRedeem(superstateTokenInAmount);
 
-        emit RedeemV2({
+        emit Redeem({
             redeemer: msg.sender,
-            to: to,
             superstateTokenInAmount: superstateTokenInAmount,
             usdcOutAmount: usdcOutAmount
         });

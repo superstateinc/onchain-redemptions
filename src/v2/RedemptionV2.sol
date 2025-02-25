@@ -7,16 +7,16 @@ import {ERC20} from "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 import {Ownable2StepUpgradeable} from "openzeppelin-contracts-upgradeable/contracts/access/Ownable2StepUpgradeable.sol";
 import {PausableUpgradeable} from "openzeppelin-contracts-upgradeable/contracts/utils/PausableUpgradeable.sol";
 import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
-import {ISuperstateToken} from "./ISuperstateToken.sol";
-import {IRedemption} from "./interfaces/IRedemption.sol";
+import {ISuperstateToken} from "../ISuperstateToken.sol";
+import {IRedemptionV2} from "../interfaces/IRedemptionV2.sol";
 
-/// @title Redemption
+/// @title RedemptionV2.sol
 /// @author Jon Walch and Max Wolff (Superstate)
 /// @notice Abstract contract that provides base functionality for Superstate Token redemption
-abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IRedemption {
+abstract contract RedemptionV2 is PausableUpgradeable, Ownable2StepUpgradeable, IRedemptionV2 {
     /**
      * @dev This empty reserved space is put in place to allow future versions to inherit from new contracts
-     * without impacting the fields within `Redemption`.
+     * without impacting the fields within `RedemptionV2.sol`.
      */
     uint256[500] private __inheritanceGap;
 
@@ -64,7 +64,7 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
 
     /**
      * @dev This empty reserved space is put in place to allow future versions to add new fields without impacting
-     * any contracts that inherit `Redemption`
+     * any contracts that inherit `RedemptionV2.sol`
      */
     uint256[100] private __additionalFieldsGap;
 
@@ -241,9 +241,8 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
         returns (uint256 superstateTokenAmount, uint256 usdPerUstbChainlinkRaw);
 
     /// @notice Abstract function that must be implemented by derived contracts
-    /// @param to The receiver address for the redeemed USDC
     /// @param superstateTokenInAmount The amount of SUPERSTATE_TOKEN to redeem
-    function redeem(address to, uint256 superstateTokenInAmount) external virtual;
+    function redeem(uint256 superstateTokenInAmount) external virtual;
 
     /// @notice Abstract function that must be implemented by derived contracts
     /// @dev Must implement proper access controls

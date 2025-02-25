@@ -1,24 +1,24 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.28;
 
-import {Redemption} from "./Redemption.sol";
+import {RedemptionV2} from "./RedemptionV2.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
-import {ISuperstateToken} from "./ISuperstateToken.sol";
+import {ISuperstateToken} from "../ISuperstateToken.sol";
 
-/// @title RedemptionIdle
-/// @notice Implementation of Redemption that keeps USDC idle in the contract
-contract RedemptionIdle is Redemption {
+/// @title RedemptionIdleV2.sol
+/// @notice Implementation of RedemptionV2.sol that keeps USDC idle in the contract
+contract RedemptionIdleV2 is RedemptionV2 {
     using SafeERC20 for IERC20;
 
     /**
      * @dev This empty reserved space is put in place to allow future versions to inherit from new contracts
-     * without impacting the fields within `RedemptionIdle`.
+     * without impacting the fields within `RedemptionIdleV2.sol`.
      */
     uint256[500] private __inheritanceGap;
 
     constructor(address _superstateToken, address _superstateTokenChainlinkFeedAddress, address _usdc)
-        Redemption(_superstateToken, _superstateTokenChainlinkFeedAddress, _usdc)
+        RedemptionV2(_superstateToken, _superstateTokenChainlinkFeedAddress, _usdc)
     {}
 
     /// @notice The ```maxUstbRedemptionAmount``` function returns the maximum amount of SUPERSTATE_TOKEN that can be redeemed based on the amount of USDC in the contract
@@ -45,9 +45,8 @@ contract RedemptionIdle is Redemption {
 
     /// @notice The ```redeem``` function allows users to redeem SUPERSTATE_TOKEN for USDC at the current oracle price
     /// @dev Will revert if oracle data is stale or there is not enough USDC in the contract
-    /// @param to The receiver address for the redeemed USDC
     /// @param superstateTokenInAmount The amount of SUPERSTATE_TOKEN to redeem
-    function redeem(address to, uint256 superstateTokenInAmount) external override {
+    function redeem(uint256 superstateTokenInAmount) external override {
         _requireNotPaused();
 
         (uint256 usdcOutAmount,) = calculateUsdcOut(superstateTokenInAmount);
@@ -55,12 +54,11 @@ contract RedemptionIdle is Redemption {
         if (USDC.balanceOf(address(this)) < usdcOutAmount) revert InsufficientBalance();
 
         SUPERSTATE_TOKEN.safeTransferFrom({from: msg.sender, to: address(this), value: superstateTokenInAmount});
-        USDC.safeTransfer({to: to, value: usdcOutAmount});
+        USDC.safeTransfer({to: msg.sender, value: usdcOutAmount});
         ISuperstateToken(address(SUPERSTATE_TOKEN)).offchainRedeem(superstateTokenInAmount);
 
-        emit RedeemV2({
+        emit Redeem({
             redeemer: msg.sender,
-            to: to,
             superstateTokenInAmount: superstateTokenInAmount,
             usdcOutAmount: usdcOutAmount
         });
