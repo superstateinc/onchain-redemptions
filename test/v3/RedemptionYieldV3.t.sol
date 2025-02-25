@@ -76,7 +76,14 @@ contract RedemptionYieldTestV3 is RedemptionYieldTestV2 {
     }
 
     function testRedeemAmountTooLarge() public override {
+        uint256 superstateTokenBalance = SUPERSTATE_TOKEN.balanceOf(SUPERSTATE_TOKEN_HOLDER);
 
+        vm.startPrank(SUPERSTATE_TOKEN_HOLDER);
+        SUPERSTATE_TOKEN.approve(address(redemption), superstateTokenBalance);
+        // Not enough USDC in the contract
+        vm.expectRevert(IRedemptionV2.InsufficientBalance.selector);
+        redemptionV3.redeem(SUPERSTATE_REDEMPTION_RECEIVER, superstateTokenBalance);
+        vm.stopPrank();
     }
 
     function testRedeemAmountZeroFail() public override {

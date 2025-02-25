@@ -215,7 +215,7 @@ contract RedemptionYieldTestV1 is Test {
         redemption.withdraw(address(SUPERSTATE_TOKEN), owner, 1);
     }
 
-    function testRedeemAmountTooLarge() public {
+    function testRedeemAmountTooLarge() public virtual {
         uint256 superstateTokenBalance = SUPERSTATE_TOKEN.balanceOf(SUPERSTATE_TOKEN_HOLDER);
 
         vm.startPrank(SUPERSTATE_TOKEN_HOLDER);
