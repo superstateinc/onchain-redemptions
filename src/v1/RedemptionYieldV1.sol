@@ -7,7 +7,6 @@ import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ISuperstateTokenV2} from "src/interfaces/ISuperstateTokenV2.sol";
 import {IComet} from "src/IComet.sol";
-import {RedemptionV2} from "../v2/RedemptionV2.sol";
 
 /// @title RedemptionYield
 /// @author Jon Walch and Max Wolff (Superstate) https://github.com/superstateinc
