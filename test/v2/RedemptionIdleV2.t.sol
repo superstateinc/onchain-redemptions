@@ -2,23 +2,23 @@
 pragma solidity ^0.8.28;
 
 import {RedemptionIdleTestV1} from "test/v1/RedemptionIdleV1.t.sol";
-import {RedemptionIdle} from "src/RedemptionIdle.sol";
+import {RedemptionIdleV2} from "src/v2/RedemptionIdleV2.sol";
 import {IRedemptionV2} from "src/interfaces/IRedemptionV2.sol";
 import {ISuperstateToken} from "src/ISuperstateToken.sol";
 
 contract RedemptionIdleTestV2 is RedemptionIdleTestV1 {
-    RedemptionIdle public redemptionV2;
+    RedemptionIdleV2 public redemptionV2;
 
-    function setUp() public override {
+    function setUp() public override virtual {
         // TODO: update test block number after deployment of new token contracts so tests pass
         super.setUp();
 
-        redemptionV2 = new RedemptionIdle(address(SUPERSTATE_TOKEN), address(oracle), address(USDC));
+        redemptionV2 = new RedemptionIdleV2(address(SUPERSTATE_TOKEN), address(oracle), address(USDC));
 
         redemptionProxyAdmin.upgradeAndCall(redemptionProxy, address(redemptionV2), "");
     }
 
-    function testRedeem() public override {
+    function testRedeem() public override virtual {
         assertEq(USDC.balanceOf(SUPERSTATE_TOKEN_HOLDER), 0);
 
         uint256 superstateTokenBalance = SUPERSTATE_TOKEN.balanceOf(SUPERSTATE_TOKEN_HOLDER);

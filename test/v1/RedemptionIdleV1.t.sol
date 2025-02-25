@@ -145,7 +145,7 @@ contract RedemptionIdleTestV1 is Test {
         redemption.withdraw(address(SUPERSTATE_TOKEN), owner, 1);
     }
 
-    function testRedeemAmountTooLarge() public {
+    function testRedeemAmountTooLarge() public virtual {
         uint256 superstateTokenBalance = SUPERSTATE_TOKEN.balanceOf(SUPERSTATE_TOKEN_HOLDER);
 
         vm.startPrank(SUPERSTATE_TOKEN_HOLDER);
@@ -209,7 +209,7 @@ contract RedemptionIdleTestV1 is Test {
         assertEq(redemptionContractUsdcBalance, USDC_AMOUNT - redeemerUsdcBalance);
     }
 
-    function testRedeemFuzz(uint256 superstateTokenRedeemAmount) public {
+    function testRedeemFuzz(uint256 superstateTokenRedeemAmount) public virtual {
         (uint256 maxRedemptionAmount,) = redemption.maxUstbRedemptionAmount();
 
         superstateTokenRedeemAmount = bound(superstateTokenRedeemAmount, 1, maxRedemptionAmount);
@@ -247,7 +247,7 @@ contract RedemptionIdleTestV1 is Test {
         );
     }
 
-    function testRedeemBadDataOldDataFail() public {
+    function testRedeemBadDataOldDataFail() public virtual {
         vm.warp(block.timestamp + 5 days + 1);
 
         assertEq(USDC.balanceOf(SUPERSTATE_TOKEN_HOLDER), 0);
@@ -262,7 +262,7 @@ contract RedemptionIdleTestV1 is Test {
         vm.stopPrank();
     }
 
-    function testRedeemAmountZeroFail() public {
+    function testRedeemAmountZeroFail() public virtual {
         hoax(SUPERSTATE_TOKEN_HOLDER);
         vm.expectRevert(IRedemptionV2.BadArgs.selector);
         redemption.redeem(0);
@@ -456,7 +456,7 @@ contract RedemptionIdleTestV1 is Test {
         assertEq(usdcOutVerify, 1_000_000_002);
     }
 
-    function testRedeemWithFee() public {
+    function testRedeemWithFee() public virtual {
         uint256 fee = 5; // 0.05%
         hoax(owner);
         redemption.setRedemptionFee(fee);
