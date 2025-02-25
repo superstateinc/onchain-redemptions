@@ -281,7 +281,7 @@ contract RedemptionYieldTestV1 is Test {
         assertEq(redemptionContractCusdcBalance, USDC_AMOUNT - redeemerUsdcBalance - lostToRounding);
     }
 
-    function testRedeemFuzz(uint256 superstateTokenRedeemAmount) public {
+    function testRedeemFuzz(uint256 superstateTokenRedeemAmount) public virtual {
         (uint256 maxRedemptionAmount,) = redemption.maxUstbRedemptionAmount();
 
         superstateTokenRedeemAmount = bound(superstateTokenRedeemAmount, 1, maxRedemptionAmount);
@@ -322,7 +322,7 @@ contract RedemptionYieldTestV1 is Test {
         );
     }
 
-    function testRedeemBadDataOldDataFail() public {
+    function testRedeemBadDataOldDataFail() public virtual {
         vm.warp(block.timestamp + 5 days + 1);
 
         assertEq(USDC.balanceOf(SUPERSTATE_TOKEN_HOLDER), 0);
@@ -398,7 +398,7 @@ contract RedemptionYieldTestV1 is Test {
         redemption.setSweepDestination(old);
     }
 
-    function testCantRedeemPaused() public {
+    function testCantRedeemPaused() public virtual {
         hoax(owner);
         redemption.pause();
 
@@ -531,7 +531,7 @@ contract RedemptionYieldTestV1 is Test {
         assertEq(usdcOutVerify, 1_000_000_002);
     }
 
-    function testRedeemWithFee() public {
+    function testRedeemWithFee() public virtual {
         uint256 fee = 5; // 0.05%
         hoax(owner);
         redemption.setRedemptionFee(fee);

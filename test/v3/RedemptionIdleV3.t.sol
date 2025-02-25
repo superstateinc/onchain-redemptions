@@ -5,8 +5,9 @@ import {RedemptionIdleTestV2} from "test/v2/RedemptionIdleV2.t.sol";
 import {IRedemption} from "src/interfaces/IRedemption.sol";
 import {ISuperstateToken} from "src/ISuperstateToken.sol";
 import {RedemptionIdle} from "src/RedemptionIdle.sol";
-import {IRedemptionV2} from "src/interfaces/IRedemptionV2.sol";
+import {IRedemption} from "src/interfaces/IRedemption.sol";
 import {SuperstateOracle} from "src/oracle/SuperstateOracle.sol";
+import {Pausable} from "openzeppelin-contracts/contracts/utils/Pausable.sol";
 
 contract RedemptionIdleTestV3 is RedemptionIdleTestV2 {
     RedemptionIdle public redemptionV3;
@@ -83,14 +84,14 @@ contract RedemptionIdleTestV3 is RedemptionIdleTestV2 {
         vm.startPrank(SUPERSTATE_TOKEN_HOLDER);
         SUPERSTATE_TOKEN.approve(address(redemption), superstateTokenBalance);
         // Not enough USDC in the contract
-        vm.expectRevert(IRedemptionV2.InsufficientBalance.selector);
+        vm.expectRevert(IRedemption.InsufficientBalance.selector);
         redemptionV3.redeem(SUPERSTATE_REDEMPTION_RECEIVER, superstateTokenBalance);
         vm.stopPrank();
     }
 
     function testRedeemAmountZeroFail() public override {
         hoax(SUPERSTATE_TOKEN_HOLDER);
-        vm.expectRevert(IRedemptionV2.BadArgs.selector);
+        vm.expectRevert(IRedemption.BadArgs.selector);
         redemptionV3.redeem(SUPERSTATE_REDEMPTION_RECEIVER, 0);
     }
 
@@ -145,6 +146,15 @@ contract RedemptionIdleTestV3 is RedemptionIdleTestV2 {
             USDC_AMOUNT - receiverUsdcBalanceAfter,
             "Contract has proper USDC balance"
         );
+    }
+
+    function testCantRedeemPaused() public override {
+        hoax(owner);
+        redemption.pause();
+
+        hoax(SUPERSTATE_TOKEN_HOLDER);
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        redemptionV3.redeem(SUPERSTATE_REDEMPTION_RECEIVER, 1);
     }
 
     function testRedeemWithFee() public override {

@@ -5,6 +5,8 @@ import {RedemptionYieldTestV2} from "test/v2/RedemptionYieldV2.t.sol";
 import {RedemptionYield} from "src/RedemptionYield.sol";
 import {IRedemption} from "src/interfaces/IRedemption.sol";
 import {ISuperstateToken} from "src/ISuperstateToken.sol";
+import {SuperstateOracle} from "src/oracle/SuperstateOracle.sol";
+import {Pausable} from "openzeppelin-contracts/contracts/utils/Pausable.sol";
 
 contract RedemptionYieldTestV3 is RedemptionYieldTestV2 {
     RedemptionYield public redemptionV3;
@@ -81,14 +83,14 @@ contract RedemptionYieldTestV3 is RedemptionYieldTestV2 {
         vm.startPrank(SUPERSTATE_TOKEN_HOLDER);
         SUPERSTATE_TOKEN.approve(address(redemption), superstateTokenBalance);
         // Not enough USDC in the contract
-        vm.expectRevert(IRedemptionV2.InsufficientBalance.selector);
+        vm.expectRevert(IRedemption.InsufficientBalance.selector);
         redemptionV3.redeem(SUPERSTATE_REDEMPTION_RECEIVER, superstateTokenBalance);
         vm.stopPrank();
     }
 
     function testRedeemAmountZeroFail() public override {
         hoax(SUPERSTATE_TOKEN_HOLDER);
-        vm.expectRevert(IRedemptionV2.BadArgs.selector);
+        vm.expectRevert(IRedemption.BadArgs.selector);
         redemptionV3.redeem(SUPERSTATE_REDEMPTION_RECEIVER, 0);
     }
 
@@ -148,7 +150,28 @@ contract RedemptionYieldTestV3 is RedemptionYieldTestV2 {
         );
     }
 
-    function testRedeemWithFee() public override {
+    function testCantRedeemPaused() public override {
+        hoax(owner);
+        redemption.pause();
 
+        hoax(SUPERSTATE_TOKEN_HOLDER);
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        redemptionV3.redeem(SUPERSTATE_REDEMPTION_RECEIVER, 1);
+    }
+
+    function testRedeemWithFee() public override {
+        uint256 fee = 5; // 0.05%
+        hoax(owner);
+        redemption.setRedemptionFee(fee);
+
+        (uint256 superstateTokenAmount,) = redemption.maxUstbRedemptionAmount();
+
+        vm.startPrank(SUPERSTATE_TOKEN_HOLDER);
+        SUPERSTATE_TOKEN.approve(address(redemption), superstateTokenAmount);
+        redemptionV3.redeem(SUPERSTATE_REDEMPTION_RECEIVER, superstateTokenAmount);
+        vm.stopPrank();
+
+        uint256 receiverUsdcBalance = USDC.balanceOf(SUPERSTATE_REDEMPTION_RECEIVER);
+        assertEq(receiverUsdcBalance, 9_999_999_999_998);
     }
 }

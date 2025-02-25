@@ -323,7 +323,7 @@ contract RedemptionIdleTestV1 is Test {
         redemption.setSweepDestination(old);
     }
 
-    function testCantRedeemPaused() public {
+    function testCantRedeemPaused() public virtual {
         hoax(owner);
         redemption.pause();
 
