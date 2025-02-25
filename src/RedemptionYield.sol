@@ -56,8 +56,9 @@ contract RedemptionYield is Redemption {
 
     /// @notice The ```redeem``` function allows users to redeem SUPERSTATE_TOKEN for USDC at the current oracle price
     /// @dev Will revert if oracle data is stale or there is not enough USDC in the contract
+    /// @param to The receiver address to deposit the redeemed USDC
     /// @param superstateTokenInAmount The amount of SUPERSTATE_TOKEN to redeem
-    function redeem(uint256 superstateTokenInAmount) external override {
+    function redeem(address to, uint256 superstateTokenInAmount) external override {
         _requireNotPaused();
 
         (uint256 usdcOutAmount,) = calculateUsdcOut(superstateTokenInAmount);
@@ -68,8 +69,9 @@ contract RedemptionYield is Redemption {
         COMPOUND.withdrawTo({to: msg.sender, asset: address(USDC), amount: usdcOutAmount});
         ISuperstateToken(address(SUPERSTATE_TOKEN)).offchainRedeem(superstateTokenInAmount);
 
-        emit Redeem({
+        emit RedeemV2({
             redeemer: msg.sender,
+            to: to,
             superstateTokenInAmount: superstateTokenInAmount,
             usdcOutAmount: usdcOutAmount
         });

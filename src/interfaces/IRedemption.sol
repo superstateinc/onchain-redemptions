@@ -19,9 +19,10 @@ interface IRedemption {
 
     /// @dev Event emitted when SUPERSTATE_TOKEN is redeemed for USDC
     /// @param redeemer The address of the entity redeeming
+    /// @param to The receiver address to deposit the redeemed USDC
     /// @param superstateTokenInAmount The amount of SUPERSTATE_TOKEN to redeem
     /// @param usdcOutAmount The amount of USDC the redeemer gets back
-    event Redeem(address indexed redeemer, uint256 superstateTokenInAmount, uint256 usdcOutAmount);
+    event RedeemV2(address indexed redeemer, address indexed to, uint256 superstateTokenInAmount, uint256 usdcOutAmount);
 
     /// @dev Event emitted when tokens are withdrawn
     /// @param token The address of the token being withdrawn
@@ -47,23 +48,23 @@ interface IRedemption {
 
     function getChainlinkPrice() external view returns (bool _isBadData, uint256 _updatedAt, uint256 _price);
     function calculateUsdcOut(uint256 superstateTokenInAmount)
-        external
-        view
-        returns (uint256 usdcOutAmount, uint256 usdPerUstbChainlinkRaw);
+    external
+    view
+    returns (uint256 usdcOutAmount, uint256 usdPerUstbChainlinkRaw);
     function calculateUstbIn(uint256 usdcOutAmount)
-        external
-        view
-        returns (uint256 ustbInAmount, uint256 usdPerUstbChainlinkRaw);
+    external
+    view
+    returns (uint256 ustbInAmount, uint256 usdPerUstbChainlinkRaw);
     function calculateFee(uint256 amount) external view returns (uint256);
     function maxUstbRedemptionAmount()
-        external
-        view
-        returns (uint256 superstateTokenAmount, uint256 usdPerUstbChainlinkRaw);
+    external
+    view
+    returns (uint256 superstateTokenAmount, uint256 usdPerUstbChainlinkRaw);
     function maximumOracleDelay() external view returns (uint256);
     function sweepDestination() external view returns (address);
     function redemptionFee() external view returns (uint256);
     function pause() external;
-    function redeem(uint256 superstateTokenInAmount) external;
+    function redeem(address to, uint256 superstateTokenInAmount) external;
     function setMaximumOracleDelay(uint256 _newMaxOracleDelay) external;
     function setSweepDestination(address _newSweepDestination) external;
     function setRedemptionFee(uint256 _newFee) external;

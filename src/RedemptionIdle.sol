@@ -45,8 +45,9 @@ contract RedemptionIdle is Redemption {
 
     /// @notice The ```redeem``` function allows users to redeem SUPERSTATE_TOKEN for USDC at the current oracle price
     /// @dev Will revert if oracle data is stale or there is not enough USDC in the contract
+    /// @param to The receiver address to deposit the redeemed USDC
     /// @param superstateTokenInAmount The amount of SUPERSTATE_TOKEN to redeem
-    function redeem(uint256 superstateTokenInAmount) external override {
+    function redeem(address to, uint256 superstateTokenInAmount) external override {
         _requireNotPaused();
 
         (uint256 usdcOutAmount,) = calculateUsdcOut(superstateTokenInAmount);
@@ -54,11 +55,12 @@ contract RedemptionIdle is Redemption {
         if (USDC.balanceOf(address(this)) < usdcOutAmount) revert InsufficientBalance();
 
         SUPERSTATE_TOKEN.safeTransferFrom({from: msg.sender, to: address(this), value: superstateTokenInAmount});
-        USDC.safeTransfer({to: msg.sender, value: usdcOutAmount});
+        USDC.safeTransfer({to: to, value: usdcOutAmount});
         ISuperstateToken(address(SUPERSTATE_TOKEN)).offchainRedeem(superstateTokenInAmount);
 
-        emit Redeem({
+        emit RedeemV2({
             redeemer: msg.sender,
+            to: to,
             superstateTokenInAmount: superstateTokenInAmount,
             usdcOutAmount: usdcOutAmount
         });
