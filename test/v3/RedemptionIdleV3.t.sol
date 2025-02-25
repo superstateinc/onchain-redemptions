@@ -109,7 +109,41 @@ contract RedemptionIdleTestV3 is RedemptionIdleTestV2 {
     }
 
     function testRedeemFuzz(uint256 superstateTokenRedeemAmount) public override {
+        (uint256 maxRedemptionAmount,) = redemption.maxUstbRedemptionAmount();
 
+        superstateTokenRedeemAmount = bound(superstateTokenRedeemAmount, 1, maxRedemptionAmount);
+
+        assertEq(USDC.balanceOf(SUPERSTATE_TOKEN_HOLDER), 0);
+
+        uint256 redeemerUstbBalanceBefore = SUPERSTATE_TOKEN.balanceOf(SUPERSTATE_TOKEN_HOLDER);
+
+        vm.startPrank(SUPERSTATE_TOKEN_HOLDER);
+        SUPERSTATE_TOKEN.approve(address(redemption), superstateTokenRedeemAmount);
+        redemptionV3.redeem(SUPERSTATE_REDEMPTION_RECEIVER, superstateTokenRedeemAmount);
+        vm.stopPrank();
+
+        uint256 redeemerUstbBalanceAfter = SUPERSTATE_TOKEN.balanceOf(SUPERSTATE_TOKEN_HOLDER);
+        uint256 redeemerUsdcBalanceAfter = USDC.balanceOf(SUPERSTATE_TOKEN_HOLDER);
+        uint256 redemptionContractUsdcBalanceAfter = USDC.balanceOf(address(redemption));
+
+        assertEq(SUPERSTATE_TOKEN.balanceOf(address(redemption)), 0, "Contract has 0 SUPERSTATE_TOKEN balance");
+
+        assertEq(
+            redeemerUstbBalanceAfter,
+            redeemerUstbBalanceBefore - superstateTokenRedeemAmount,
+            "Redeemer has proper SUPERSTATE_TOKEN balance"
+        );
+
+        assertEq(
+            redeemerUsdcBalanceAfter,
+            USDC_AMOUNT - redemptionContractUsdcBalanceAfter,
+            "Redeemer has proper USDC balance"
+        );
+        assertEq(
+            redemptionContractUsdcBalanceAfter,
+            USDC_AMOUNT - redeemerUsdcBalanceAfter,
+            "Contract has proper USDC balance"
+        );
     }
 
     function testRedeemWithFee() public override {
