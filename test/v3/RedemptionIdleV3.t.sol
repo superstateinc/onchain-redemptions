@@ -6,6 +6,7 @@ import {IRedemption} from "src/interfaces/IRedemption.sol";
 import {ISuperstateToken} from "src/ISuperstateToken.sol";
 import {RedemptionIdle} from "src/RedemptionIdle.sol";
 import {IRedemptionV2} from "src/interfaces/IRedemptionV2.sol";
+import {SuperstateOracle} from "src/oracle/SuperstateOracle.sol";
 
 contract RedemptionIdleTestV3 is RedemptionIdleTestV2 {
     RedemptionIdle public redemptionV3;
@@ -61,6 +62,7 @@ contract RedemptionIdleTestV3 is RedemptionIdleTestV2 {
             superstateTokenInAmount: superstateTokenAmount,
             usdcOutAmount: 9999999999996
         });
+
         redemptionV3.redeem(SUPERSTATE_REDEMPTION_RECEIVER, superstateTokenAmount);
         vm.stopPrank();
 
@@ -147,6 +149,18 @@ contract RedemptionIdleTestV3 is RedemptionIdleTestV2 {
     }
 
     function testRedeemWithFee() public override {
+        uint256 fee = 5; // 0.05%
+        hoax(owner);
+        redemption.setRedemptionFee(fee);
 
+        (uint256 superstateTokenAmount,) = redemption.maxUstbRedemptionAmount();
+
+        vm.startPrank(SUPERSTATE_TOKEN_HOLDER);
+        SUPERSTATE_TOKEN.approve(address(redemption), superstateTokenAmount);
+        redemptionV3.redeem(SUPERSTATE_REDEMPTION_RECEIVER, superstateTokenAmount);
+        vm.stopPrank();
+
+        uint256 redeemerUsdcBalance = USDC.balanceOf(SUPERSTATE_REDEMPTION_RECEIVER);
+        assertEq(redeemerUsdcBalance, 9_999_999_999_998);
     }
 }
