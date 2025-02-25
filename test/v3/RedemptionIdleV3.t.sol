@@ -11,7 +11,6 @@ import {SuperstateOracle} from "src/oracle/SuperstateOracle.sol";
 contract RedemptionIdleTestV3 is RedemptionIdleTestV2 {
     RedemptionIdle public redemptionV3;
     address public constant SUPERSTATE_REDEMPTION_RECEIVER = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
-//    ProxyAdmin public redemptionProxyAdminV3;
 
     function setUp() public override {
         // TODO: update test block number after deployment of new token contracts so tests pass
