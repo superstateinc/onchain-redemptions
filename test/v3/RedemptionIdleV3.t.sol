@@ -5,6 +5,7 @@ import {RedemptionIdleTestV2} from "test/v2/RedemptionIdleV2.t.sol";
 import {IRedemption} from "src/interfaces/IRedemption.sol";
 import {ISuperstateToken} from "src/ISuperstateToken.sol";
 import {RedemptionIdle} from "src/RedemptionIdle.sol";
+import {IRedemptionV2} from "src/interfaces/IRedemptionV2.sol";
 
 contract RedemptionIdleTestV3 is RedemptionIdleTestV2 {
     RedemptionIdle public redemptionV3;
@@ -76,7 +77,14 @@ contract RedemptionIdleTestV3 is RedemptionIdleTestV2 {
     }
 
     function testRedeemAmountTooLarge() public override {
+        uint256 superstateTokenBalance = SUPERSTATE_TOKEN.balanceOf(SUPERSTATE_TOKEN_HOLDER);
 
+        vm.startPrank(SUPERSTATE_TOKEN_HOLDER);
+        SUPERSTATE_TOKEN.approve(address(redemption), superstateTokenBalance);
+        // Not enough USDC in the contract
+        vm.expectRevert(IRedemptionV2.InsufficientBalance.selector);
+        redemptionV3.redeem(SUPERSTATE_REDEMPTION_RECEIVER, superstateTokenBalance);
+        vm.stopPrank();
     }
 
     function testRedeemAmountZeroFail() public override {
