@@ -22,7 +22,9 @@ interface IRedemption {
     /// @param to The receiver address to deposit the redeemed USDC
     /// @param superstateTokenInAmount The amount of SUPERSTATE_TOKEN to redeem
     /// @param usdcOutAmount The amount of USDC the redeemer gets back
-    event RedeemV2(address indexed redeemer, address indexed to, uint256 superstateTokenInAmount, uint256 usdcOutAmount);
+    event RedeemV2(
+        address indexed redeemer, address indexed to, uint256 superstateTokenInAmount, uint256 usdcOutAmount
+    );
 
     /// @dev Event emitted when tokens are withdrawn
     /// @param token The address of the token being withdrawn

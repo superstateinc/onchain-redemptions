@@ -9,7 +9,7 @@ import {ISuperstateToken} from "src/ISuperstateToken.sol";
 contract RedemptionIdleTestV2 is RedemptionIdleTestV1 {
     RedemptionIdleV2 public redemptionV2;
 
-    function setUp() public override virtual {
+    function setUp() public virtual override {
         // TODO: update test block number after deployment of new token contracts so tests pass
         super.setUp();
 
@@ -18,7 +18,7 @@ contract RedemptionIdleTestV2 is RedemptionIdleTestV1 {
         redemptionProxyAdmin.upgradeAndCall(redemptionProxy, address(redemptionV2), "");
     }
 
-    function testRedeem() public override virtual {
+    function testRedeem() public virtual override {
         assertEq(USDC.balanceOf(SUPERSTATE_TOKEN_HOLDER), 0);
 
         uint256 superstateTokenBalance = SUPERSTATE_TOKEN.balanceOf(SUPERSTATE_TOKEN_HOLDER);
