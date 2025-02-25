@@ -6,8 +6,6 @@ libs = ["lib"]
 via-ir = false
 # Enables or disables the optimizer
 optimizer = false
-# The number of optimizer runs
-optimizer_runs = 2_000 # TODO
 # Version to compile with
 solc_version = "0.8.28"
 remappings = [
