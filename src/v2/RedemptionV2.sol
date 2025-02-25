@@ -8,12 +8,12 @@ import {Ownable2StepUpgradeable} from "openzeppelin-contracts-upgradeable/contra
 import {PausableUpgradeable} from "openzeppelin-contracts-upgradeable/contracts/utils/PausableUpgradeable.sol";
 import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ISuperstateToken} from "./ISuperstateToken.sol";
-import {IRedemption} from "./interfaces/IRedemption.sol";
+import {IRedemptionV2} from "./interfaces/IRedemptionV2.sol";
 
 /// @title RedemptionV2.sol
 /// @author Jon Walch and Max Wolff (Superstate)
 /// @notice Abstract contract that provides base functionality for Superstate Token redemption
-abstract contract RedemptionV2 is PausableUpgradeable, Ownable2StepUpgradeable, IRedemption {
+abstract contract RedemptionV2 is PausableUpgradeable, Ownable2StepUpgradeable, IRedemptionV2 {
     /**
      * @dev This empty reserved space is put in place to allow future versions to inherit from new contracts
      * without impacting the fields within `RedemptionV2.sol`.

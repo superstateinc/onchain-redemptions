@@ -3,7 +3,7 @@ pragma solidity ^0.8.28;
 
 import {RedemptionYieldTestV1} from "test/v1/RedemptionYieldV1.t.sol";
 import {RedemptionYield} from "src/RedemptionYield.sol";
-import {IRedemption} from "src/interfaces/IRedemption.sol";
+import {IRedemptionV2} from "src/interfaces/IRedemptionV2.sol";
 import {ISuperstateToken} from "src/ISuperstateToken.sol";
 
 contract RedemptionYieldV2 is RedemptionYieldTestV1 {
@@ -51,7 +51,7 @@ contract RedemptionYieldV2 is RedemptionYieldTestV1 {
         });
         vm.expectEmit(true, true, true, true);
         // ~1e13, the original USDC amount
-        emit IRedemption.Redeem({
+        emit IRedemptionV2.Redeem({
             redeemer: SUPERSTATE_TOKEN_HOLDER,
             superstateTokenInAmount: superstateTokenAmount,
             usdcOutAmount: 9999999999996
