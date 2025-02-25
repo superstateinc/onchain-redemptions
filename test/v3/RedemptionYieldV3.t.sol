@@ -93,7 +93,18 @@ contract RedemptionYieldTestV3 is RedemptionYieldTestV2 {
     }
 
     function testRedeemBadDataOldDataFail() public override {
+        vm.warp(block.timestamp + 5 days + 1);
 
+        assertEq(USDC.balanceOf(SUPERSTATE_TOKEN_HOLDER), 0);
+
+        vm.expectRevert(SuperstateOracle.StaleCheckpoint.selector);
+        redemption.maxUstbRedemptionAmount();
+
+        vm.startPrank(SUPERSTATE_TOKEN_HOLDER);
+        SUPERSTATE_TOKEN.approve(address(redemption), 100);
+        vm.expectRevert(SuperstateOracle.StaleCheckpoint.selector);
+        redemptionV3.redeem(SUPERSTATE_REDEMPTION_RECEIVER, 100);
+        vm.stopPrank();
     }
 
     function testRedeemFuzz(uint256 superstateTokenRedeemAmount) public override {
