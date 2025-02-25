@@ -241,7 +241,7 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
         returns (uint256 superstateTokenAmount, uint256 usdPerUstbChainlinkRaw);
 
     /// @notice Abstract function that must be implemented by derived contracts
-    /// @param to The receiver address to deposit the redeemed USDC
+    /// @param to The receiver address for the redeemed USDC
     /// @param superstateTokenInAmount The amount of SUPERSTATE_TOKEN to redeem
     function redeem(address to, uint256 superstateTokenInAmount) external virtual;
 
