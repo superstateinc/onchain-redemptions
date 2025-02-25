@@ -10,7 +10,7 @@ import {Pausable} from "openzeppelin-contracts/contracts/utils/Pausable.sol";
 import {AllowList} from "ustb/src/AllowList.sol";
 import {Redemption} from "src/Redemption.sol";
 import {IRedemptionV2} from "src/interfaces/IRedemptionV2.sol";
-import {IRedemptionIdle} from "src/interfaces/IRedemptionIdle.sol";
+import {IRedemptionIdleV2} from "src/interfaces/IRedemptionIdleV2.sol";
 import {ISuperstateTokenV2} from "src/interfaces/ISuperstateTokenV2.sol";
 import {IComet} from "src/IComet.sol";
 import {deployRedemptionIdleV1} from "script/RedemptionIdle.s.sol";
@@ -36,7 +36,7 @@ contract RedemptionIdleTestV1 is Test {
     uint256 public constant MAXIMUM_ORACLE_DELAY = 93_600;
 
     SuperstateOracle public oracle;
-    IRedemptionIdle public redemption;
+    IRedemptionIdleV2 public redemption;
     ITransparentUpgradeableProxy public redemptionProxy;
     ProxyAdmin public redemptionProxyAdmin;
 
@@ -83,7 +83,7 @@ contract RedemptionIdleTestV1 is Test {
             0
         );
 
-        redemption = IRedemptionIdle(address(proxy));
+        redemption = IRedemptionIdleV2(address(proxy));
         redemptionProxy = ITransparentUpgradeableProxy(payable(proxy));
         redemptionProxyAdmin = ProxyAdmin(getAdminAddress(address(redemptionProxy)));
 

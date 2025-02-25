@@ -10,7 +10,7 @@ import {Pausable} from "openzeppelin-contracts/contracts/utils/Pausable.sol";
 import {AllowList} from "ustb/src/AllowList.sol";
 import {Redemption} from "src/Redemption.sol";
 import {IRedemptionV2} from "src/interfaces/IRedemptionV2.sol";
-import {IRedemptionYield} from "src/interfaces/IRedemptionYield.sol";
+import {IRedemptionYieldV2} from "src/interfaces/IRedemptionYieldV2.sol";
 import {ISuperstateTokenV2} from "src/interfaces/ISuperstateTokenV2.sol";
 import {IComet} from "src/IComet.sol";
 import {deployRedemptionYieldV1} from "script/RedemptionYield.s.sol";
@@ -37,7 +37,7 @@ contract RedemptionYieldTestV1 is Test {
     uint256 public constant MAXIMUM_ORACLE_DELAY = 93_600;
 
     SuperstateOracle public oracle;
-    IRedemptionYield public redemption;
+    IRedemptionYieldV2 public redemption;
     ITransparentUpgradeableProxy public redemptionProxy;
     ProxyAdmin public redemptionProxyAdmin;
 
@@ -79,7 +79,7 @@ contract RedemptionYieldTestV1 is Test {
             address(COMPOUND)
         );
 
-        redemption = IRedemptionYield(address(proxy));
+        redemption = IRedemptionYieldV2(address(proxy));
         redemptionProxy = ITransparentUpgradeableProxy(payable(proxy));
         redemptionProxyAdmin = ProxyAdmin(getAdminAddress(address(redemptionProxy)));
 
@@ -93,7 +93,7 @@ contract RedemptionYieldTestV1 is Test {
         vm.startPrank(owner);
         USDC.approve(address(redemption), USDC_AMOUNT);
         vm.expectEmit(true, true, true, true);
-        emit IRedemptionYield.Deposit({token: address(USDC), depositor: owner, amount: USDC_AMOUNT});
+        emit IRedemptionYieldV2.Deposit({token: address(USDC), depositor: owner, amount: USDC_AMOUNT});
         redemption.deposit(USDC_AMOUNT);
         vm.stopPrank();
 

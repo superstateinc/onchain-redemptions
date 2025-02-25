@@ -5,8 +5,8 @@ import {RedemptionV2} from "./RedemptionV2.sol";
 import {IRedemptionYield} from "src/interfaces/IRedemptionYield.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
-import {ISuperstateToken} from "./ISuperstateToken.sol";
-import {IComet} from "./IComet.sol";
+import {ISuperstateToken} from "../ISuperstateToken.sol";
+import {IComet} from "../IComet.sol";
 
 /// @title RedemptionYieldV2.sol
 /// @author Jon Walch and Max Wolff (Superstate) https://github.com/superstateinc
@@ -28,7 +28,7 @@ contract RedemptionYieldV2 is RedemptionV2 {
         address _superstateTokenChainlinkFeedAddress,
         address _usdc,
         address _compound
-    ) Redemption(_superstateToken, _superstateTokenChainlinkFeedAddress, _usdc) {
+    ) RedemptionV2(_superstateToken, _superstateTokenChainlinkFeedAddress, _usdc) {
         COMPOUND = IComet(_compound);
     }
 

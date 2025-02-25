@@ -7,8 +7,8 @@ import {ERC20} from "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 import {Ownable2StepUpgradeable} from "openzeppelin-contracts-upgradeable/contracts/access/Ownable2StepUpgradeable.sol";
 import {PausableUpgradeable} from "openzeppelin-contracts-upgradeable/contracts/utils/PausableUpgradeable.sol";
 import {SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
-import {ISuperstateToken} from "./ISuperstateToken.sol";
-import {IRedemptionV2} from "./interfaces/IRedemptionV2.sol";
+import {ISuperstateToken} from "../ISuperstateToken.sol";
+import {IRedemptionV2} from "../interfaces/IRedemptionV2.sol";
 
 /// @title RedemptionV2.sol
 /// @author Jon Walch and Max Wolff (Superstate)
