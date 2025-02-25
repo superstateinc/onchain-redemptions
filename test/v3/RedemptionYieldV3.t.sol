@@ -87,7 +87,9 @@ contract RedemptionYieldTestV3 is RedemptionYieldTestV2 {
     }
 
     function testRedeemAmountZeroFail() public override {
-
+        hoax(SUPERSTATE_TOKEN_HOLDER);
+        vm.expectRevert(IRedemptionV2.BadArgs.selector);
+        redemptionV3.redeem(SUPERSTATE_REDEMPTION_RECEIVER, 0);
     }
 
     function testRedeemBadDataOldDataFail() public override {

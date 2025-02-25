@@ -337,7 +337,7 @@ contract RedemptionYieldTestV1 is Test {
         vm.stopPrank();
     }
 
-    function testRedeemAmountZeroFail() public {
+    function testRedeemAmountZeroFail() public virtual {
         hoax(SUPERSTATE_TOKEN_HOLDER);
         vm.expectRevert(IRedemptionV2.BadArgs.selector);
         redemption.redeem(0);
