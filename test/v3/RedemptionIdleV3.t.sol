@@ -124,7 +124,7 @@ contract RedemptionIdleTestV3 is RedemptionIdleTestV2 {
         vm.stopPrank();
 
         uint256 redeemerUstbBalanceAfter = SUPERSTATE_TOKEN.balanceOf(SUPERSTATE_TOKEN_HOLDER);
-        uint256 redeemerUsdcBalanceAfter = USDC.balanceOf(SUPERSTATE_TOKEN_HOLDER);
+        uint256 receiverUsdcBalanceAfter = USDC.balanceOf(SUPERSTATE_REDEMPTION_RECEIVER);
         uint256 redemptionContractUsdcBalanceAfter = USDC.balanceOf(address(redemption));
 
         assertEq(SUPERSTATE_TOKEN.balanceOf(address(redemption)), 0, "Contract has 0 SUPERSTATE_TOKEN balance");
@@ -136,13 +136,13 @@ contract RedemptionIdleTestV3 is RedemptionIdleTestV2 {
         );
 
         assertEq(
-            redeemerUsdcBalanceAfter,
+            receiverUsdcBalanceAfter,
             USDC_AMOUNT - redemptionContractUsdcBalanceAfter,
-            "Redeemer has proper USDC balance"
+            "Receiver has proper USDC balance"
         );
         assertEq(
             redemptionContractUsdcBalanceAfter,
-            USDC_AMOUNT - redeemerUsdcBalanceAfter,
+            USDC_AMOUNT - receiverUsdcBalanceAfter,
             "Contract has proper USDC balance"
         );
     }
