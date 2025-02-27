@@ -154,7 +154,7 @@ contract RedemptionIdleTestV3 is RedemptionIdleTestV2 {
 
         hoax(SUPERSTATE_TOKEN_HOLDER);
         vm.expectRevert(Pausable.EnforcedPause.selector);
-        redemptionV3.redeem(SUPERSTATE_REDEMPTION_RECEIVER, 1);
+        redemption.redeem( 1);
     }
 
     function testRedeemWithFee() public override {
@@ -166,10 +166,10 @@ contract RedemptionIdleTestV3 is RedemptionIdleTestV2 {
 
         vm.startPrank(SUPERSTATE_TOKEN_HOLDER);
         SUPERSTATE_TOKEN.approve(address(redemption), superstateTokenAmount);
-        redemptionV3.redeem(SUPERSTATE_REDEMPTION_RECEIVER, superstateTokenAmount);
+        redemption.redeem(superstateTokenAmount);
         vm.stopPrank();
 
-        uint256 redeemerUsdcBalance = USDC.balanceOf(SUPERSTATE_REDEMPTION_RECEIVER);
+        uint256 redeemerUsdcBalance = USDC.balanceOf(SUPERSTATE_TOKEN_HOLDER);
         assertEq(redeemerUsdcBalance, 9_999_999_999_998);
     }
 }

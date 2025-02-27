@@ -43,11 +43,7 @@ contract RedemptionIdle is Redemption {
             / (usdPerUstbChainlinkRaw * USDC_PRECISION);
     }
 
-    /// @notice The ```redeem``` function allows users to redeem SUPERSTATE_TOKEN for USDC at the current oracle price
-    /// @dev Will revert if oracle data is stale or there is not enough USDC in the contract
-    /// @param to The receiver address for the redeemed USDC
-    /// @param superstateTokenInAmount The amount of SUPERSTATE_TOKEN to redeem
-    function redeem(address to, uint256 superstateTokenInAmount) external override {
+    function _redeem(address to, uint256 superstateTokenInAmount) internal {
         _requireNotPaused();
 
         (uint256 usdcOutAmount,) = calculateUsdcOut(superstateTokenInAmount);
@@ -64,6 +60,21 @@ contract RedemptionIdle is Redemption {
             superstateTokenInAmount: superstateTokenInAmount,
             usdcOutAmount: usdcOutAmount
         });
+    }
+
+    /// @notice The ```redeem``` function allows users to redeem SUPERSTATE_TOKEN for USDC at the current oracle price
+    /// @dev Will revert if oracle data is stale or there is not enough USDC in the contract
+    /// @param to The receiver address for the redeemed USDC
+    /// @param superstateTokenInAmount The amount of SUPERSTATE_TOKEN to redeem
+    function redeem(address to, uint256 superstateTokenInAmount) external override {
+        _redeem(to, superstateTokenInAmount);
+    }
+
+    /// @notice The ```redeem``` function allows users to redeem SUPERSTATE_TOKEN for USDC at the current oracle price
+    /// @dev Will revert if oracle data is stale or there is not enough USDC in the contract
+    /// @param superstateTokenInAmount The amount of SUPERSTATE_TOKEN to redeem
+    function redeem(uint256 superstateTokenInAmount) external {
+        _redeem(msg.sender, superstateTokenInAmount);
     }
 
     /// @notice The ```withdraw``` function allows the owner to withdraw any type of ERC20
