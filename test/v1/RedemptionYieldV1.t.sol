@@ -7,7 +7,7 @@ import {Vm} from "forge-std/Vm.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {Ownable} from "openzeppelin-contracts/contracts/access/Ownable.sol";
 import {Pausable} from "openzeppelin-contracts/contracts/utils/Pausable.sol";
-import {AllowList} from "ustb/src/AllowList.sol";
+import {AllowListV1} from "ustb/src/allowlist/v1/AllowListV1.sol";
 import {Redemption} from "src/Redemption.sol";
 import {IRedemptionV2} from "src/interfaces/IRedemptionV2.sol";
 import {IRedemptionYieldV2} from "src/interfaces/IRedemptionYieldV2.sol";
@@ -23,7 +23,7 @@ import "openzeppelin-contracts/contracts/proxy/transparent/ProxyAdmin.sol";
 contract RedemptionYieldTestV1 is Test {
     address public owner = address(this);
 
-    AllowList public constant allowList = AllowList(0x42d75C8FdBBF046DF0Fe1Ff388DA16fF99dE8149);
+    AllowListV1 public constant allowListV1 = AllowListV1(0x42d75C8FdBBF046DF0Fe1Ff388DA16fF99dE8149);
     address public allowListAdmin = 0x8C7Db8A96d39F76D9f456db23d591C2FDd0e2F8a;
 
     IERC20 public constant SUPERSTATE_TOKEN = IERC20(0x43415eB6ff9DB7E26A15b704e7A3eDCe97d31C4e);
@@ -84,7 +84,7 @@ contract RedemptionYieldTestV1 is Test {
         redemptionProxyAdmin = ProxyAdmin(getAdminAddress(address(redemptionProxy)));
 
         vm.startPrank(allowListAdmin);
-        allowList.setEntityIdForAddress(ENTITY_ID, address(redemption));
+        allowListV1.setEntityIdForAddress(ENTITY_ID, address(redemption));
 
         vm.stopPrank();
 
