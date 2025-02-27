@@ -41,6 +41,10 @@ contract RedemptionIdleTestV1 is Test {
     ITransparentUpgradeableProxy public redemptionProxy;
     ProxyAdmin public redemptionProxyAdmin;
 
+    uint256 public forkBlockNumber = 19_976_215;  // Default, but can be overridden
+    uint256 public rollBlockNumber = 20_993_400;  // Default, but can be overridden
+    uint256 public warpTimestamp = 1_726_779_601; // Default, but can be overridden
+
     function getAdminAddress(address _proxy) internal view returns (address) {
         address CHEATCODE_ADDRESS = 0x7109709ECfa91a80626fF3989D68f67F5b1DD12D;
         Vm vm = Vm(CHEATCODE_ADDRESS);
@@ -50,14 +54,12 @@ contract RedemptionIdleTestV1 is Test {
     }
 
     function setUp() public virtual {
-        vm.createSelectFork(vm.envString("ETH_RPC_URL"), 19_976_215);
-        vm.roll(20_993_400);
+        vm.createSelectFork(vm.envString("ETH_RPC_URL"), forkBlockNumber); // Use variable
+        vm.roll(rollBlockNumber); // Use variable
+        vm.warp(warpTimestamp); // Use variable
 
         (address payable _addressOracle,,) = deploySuperstateOracle(owner, address(SUPERSTATE_TOKEN), 1_000_000);
-
         oracle = SuperstateOracle(_addressOracle);
-
-        vm.warp(1726_779_601);
 
         hoax(owner);
         oracle.addCheckpoint(1726779600, 1726779601, 10_374_862, false);
@@ -66,12 +68,6 @@ contract RedemptionIdleTestV1 is Test {
 
         hoax(owner);
         oracle.addCheckpoint(uint64(1726866000), 1726866001, 10_379_322, false);
-        // result = laterCheckpointNavs + ((laterCheckpointNavs - earlierCheckpointNavs) * (targetTimestamp - laterCheckpointTimestamp)) / (laterCheckpointTimestamp - earlierCheckpointTimestamp)
-
-        // 4460 diff between navs = 1726866000 - 1726779600
-        // 86,400 seconds between checkpoints
-        // diff between
-        // 10379322 + 4460* 1 / 86,400 = 10,379,322 interpolated nav/s
 
         (,,, address proxy) = deployRedemptionIdleV1(
             address(SUPERSTATE_TOKEN),
