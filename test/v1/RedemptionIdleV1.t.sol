@@ -11,6 +11,7 @@ import {AllowList} from "ustb/src/AllowList.sol";
 import {Redemption} from "src/Redemption.sol";
 import {IRedemptionV2} from "src/interfaces/IRedemptionV2.sol";
 import {IRedemptionIdleV2} from "src/interfaces/IRedemptionIdleV2.sol";
+import {IRedemptionIdle} from "src/interfaces/IRedemptionIdle.sol";
 import {ISuperstateTokenV2} from "src/interfaces/ISuperstateTokenV2.sol";
 import {IComet} from "src/IComet.sol";
 import {deployRedemptionIdleV1} from "script/RedemptionIdle.s.sol";
@@ -36,7 +37,7 @@ contract RedemptionIdleTestV1 is Test {
     uint256 public constant MAXIMUM_ORACLE_DELAY = 93_600;
 
     SuperstateOracle public oracle;
-    IRedemptionIdleV2 public redemption;
+    IRedemptionIdle public redemption;
     ITransparentUpgradeableProxy public redemptionProxy;
     ProxyAdmin public redemptionProxyAdmin;
 
@@ -83,7 +84,7 @@ contract RedemptionIdleTestV1 is Test {
             0
         );
 
-        redemption = IRedemptionIdleV2(address(proxy));
+        redemption = IRedemptionIdle(address(proxy));
         redemptionProxy = ITransparentUpgradeableProxy(payable(proxy));
         redemptionProxyAdmin = ProxyAdmin(getAdminAddress(address(redemptionProxy)));
 

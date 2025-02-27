@@ -84,7 +84,7 @@ contract RedemptionYield is Redemption {
     /// @notice The ```redeem``` function allows users to redeem SUPERSTATE_TOKEN for USDC at the current oracle price
     /// @dev Will revert if oracle data is stale or there is not enough USDC in the contract
     /// @param superstateTokenInAmount The amount of SUPERSTATE_TOKEN to redeem
-    function redeem(uint256 superstateTokenInAmount) external {
+    function redeem(uint256 superstateTokenInAmount) external override {
         _redeem(msg.sender, superstateTokenInAmount);
     }
 

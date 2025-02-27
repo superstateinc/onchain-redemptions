@@ -8,9 +8,11 @@ import {RedemptionIdle} from "src/RedemptionIdle.sol";
 import {IRedemption} from "src/interfaces/IRedemption.sol";
 import {SuperstateOracle} from "src/oracle/SuperstateOracle.sol";
 import {Pausable} from "openzeppelin-contracts/contracts/utils/Pausable.sol";
+import {IRedemptionIdle} from "src/interfaces/IRedemptionIdle.sol";
 
 contract RedemptionIdleTestV3 is RedemptionIdleTestV2 {
     RedemptionIdle public redemptionV3;
+
     address public constant SUPERSTATE_REDEMPTION_RECEIVER = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
 
     function setUp() public override {
@@ -18,8 +20,8 @@ contract RedemptionIdleTestV3 is RedemptionIdleTestV2 {
         super.setUp();
 
         redemptionV3 = new RedemptionIdle(address(SUPERSTATE_TOKEN), address(oracle), address(USDC));
-
         redemptionProxyAdmin.upgradeAndCall(redemptionProxy, address(redemptionV3), "");
+        redemption = IRedemptionIdle(address(redemptionProxy));
     }
 
     function testRedeem() public override {
@@ -63,7 +65,7 @@ contract RedemptionIdleTestV3 is RedemptionIdleTestV2 {
             usdcOutAmount: 9999999999996
         });
 
-        redemptionV3.redeem(SUPERSTATE_REDEMPTION_RECEIVER, superstateTokenAmount);
+        redemption.redeem(SUPERSTATE_REDEMPTION_RECEIVER, superstateTokenAmount);
         vm.stopPrank();
 
         uint256 receiverUsdcBalance = USDC.balanceOf(SUPERSTATE_REDEMPTION_RECEIVER);
@@ -85,14 +87,14 @@ contract RedemptionIdleTestV3 is RedemptionIdleTestV2 {
         SUPERSTATE_TOKEN.approve(address(redemption), superstateTokenBalance);
         // Not enough USDC in the contract
         vm.expectRevert(IRedemption.InsufficientBalance.selector);
-        redemptionV3.redeem(SUPERSTATE_REDEMPTION_RECEIVER, superstateTokenBalance);
+        redemption.redeem(SUPERSTATE_REDEMPTION_RECEIVER, superstateTokenBalance);
         vm.stopPrank();
     }
 
     function testRedeemAmountZeroFail() public override {
         hoax(SUPERSTATE_TOKEN_HOLDER);
         vm.expectRevert(IRedemption.BadArgs.selector);
-        redemptionV3.redeem(SUPERSTATE_REDEMPTION_RECEIVER, 0);
+        redemption.redeem(SUPERSTATE_REDEMPTION_RECEIVER, 0);
     }
 
     function testRedeemBadDataOldDataFail() public override {
@@ -106,7 +108,7 @@ contract RedemptionIdleTestV3 is RedemptionIdleTestV2 {
         vm.startPrank(SUPERSTATE_TOKEN_HOLDER);
         SUPERSTATE_TOKEN.approve(address(redemption), 100);
         vm.expectRevert(SuperstateOracle.StaleCheckpoint.selector);
-        redemptionV3.redeem(SUPERSTATE_REDEMPTION_RECEIVER, 100);
+        redemption.redeem(SUPERSTATE_REDEMPTION_RECEIVER, 100);
         vm.stopPrank();
     }
 
@@ -121,7 +123,7 @@ contract RedemptionIdleTestV3 is RedemptionIdleTestV2 {
 
         vm.startPrank(SUPERSTATE_TOKEN_HOLDER);
         SUPERSTATE_TOKEN.approve(address(redemption), superstateTokenRedeemAmount);
-        redemptionV3.redeem(SUPERSTATE_REDEMPTION_RECEIVER, superstateTokenRedeemAmount);
+        redemption.redeem(SUPERSTATE_REDEMPTION_RECEIVER, superstateTokenRedeemAmount);
         vm.stopPrank();
 
         uint256 redeemerUstbBalanceAfter = SUPERSTATE_TOKEN.balanceOf(SUPERSTATE_TOKEN_HOLDER);
@@ -154,7 +156,7 @@ contract RedemptionIdleTestV3 is RedemptionIdleTestV2 {
 
         hoax(SUPERSTATE_TOKEN_HOLDER);
         vm.expectRevert(Pausable.EnforcedPause.selector);
-        redemption.redeem( 1);
+        redemption.redeem( SUPERSTATE_REDEMPTION_RECEIVER, 1);
     }
 
     function testRedeemWithFee() public override {
@@ -166,10 +168,10 @@ contract RedemptionIdleTestV3 is RedemptionIdleTestV2 {
 
         vm.startPrank(SUPERSTATE_TOKEN_HOLDER);
         SUPERSTATE_TOKEN.approve(address(redemption), superstateTokenAmount);
-        redemption.redeem(superstateTokenAmount);
+        redemption.redeem(SUPERSTATE_REDEMPTION_RECEIVER, superstateTokenAmount);
         vm.stopPrank();
 
-        uint256 redeemerUsdcBalance = USDC.balanceOf(SUPERSTATE_TOKEN_HOLDER);
+        uint256 redeemerUsdcBalance = USDC.balanceOf(SUPERSTATE_REDEMPTION_RECEIVER);
         assertEq(redeemerUsdcBalance, 9_999_999_999_998);
     }
 }
