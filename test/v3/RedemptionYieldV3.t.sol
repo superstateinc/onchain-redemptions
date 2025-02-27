@@ -156,7 +156,7 @@ contract RedemptionYieldTestV3 is RedemptionYieldTestV2 {
 
         hoax(SUPERSTATE_TOKEN_HOLDER);
         vm.expectRevert(Pausable.EnforcedPause.selector);
-        redemptionV3.redeem(SUPERSTATE_REDEMPTION_RECEIVER, 1);
+        redemption.redeem( 1);
     }
 
     function testRedeemWithFee() public override {
@@ -168,10 +168,10 @@ contract RedemptionYieldTestV3 is RedemptionYieldTestV2 {
 
         vm.startPrank(SUPERSTATE_TOKEN_HOLDER);
         SUPERSTATE_TOKEN.approve(address(redemption), superstateTokenAmount);
-        redemptionV3.redeem(SUPERSTATE_REDEMPTION_RECEIVER, superstateTokenAmount);
+        redemption.redeem(superstateTokenAmount);
         vm.stopPrank();
 
-        uint256 receiverUsdcBalance = USDC.balanceOf(SUPERSTATE_REDEMPTION_RECEIVER);
+        uint256 receiverUsdcBalance = USDC.balanceOf(SUPERSTATE_TOKEN_HOLDER);
         assertEq(receiverUsdcBalance, 9_999_999_999_998);
     }
 }
