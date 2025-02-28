@@ -52,18 +52,10 @@ contract RedemptionIdleTestV3 is RedemptionIdleTestV2 {
         });
 
         vm.expectEmit(true, true, true, true, address(USDC));
-        emit IERC20.Transfer({
-            from: address(redemption),
-            to: SUPERSTATE_REDEMPTION_RECEIVER,
-            value: 9999999999996
-        });
+        emit IERC20.Transfer({from: address(redemption), to: SUPERSTATE_REDEMPTION_RECEIVER, value: 9999999999996});
 
         vm.expectEmit(true, true, true, true, address(SUPERSTATE_TOKEN));
-        emit ISuperstateToken.Transfer({
-            from: address(redemption),
-            to: address(0),
-            value: superstateTokenAmount
-        });
+        emit ISuperstateToken.Transfer({from: address(redemption), to: address(0), value: superstateTokenAmount});
 
         vm.expectEmit(true, true, true, true, address(SUPERSTATE_TOKEN));
         emit ISuperstateToken.OffchainRedeem({
@@ -171,7 +163,7 @@ contract RedemptionIdleTestV3 is RedemptionIdleTestV2 {
 
         hoax(SUPERSTATE_TOKEN_HOLDER);
         vm.expectRevert(Pausable.EnforcedPause.selector);
-        redemption.redeem( SUPERSTATE_REDEMPTION_RECEIVER, 1);
+        redemption.redeem(SUPERSTATE_REDEMPTION_RECEIVER, 1);
     }
 
     function testRedeemWithFee() public override {

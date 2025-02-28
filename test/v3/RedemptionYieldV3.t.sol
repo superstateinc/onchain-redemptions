@@ -19,7 +19,8 @@ contract RedemptionYieldTestV3 is RedemptionYieldTestV2 {
     function setUp() public override {
         super.setUp();
 
-        redemptionV3 = new RedemptionYield(address(SUPERSTATE_TOKEN), address(oracle), address(USDC), address(COMPOUND_ADDR));
+        redemptionV3 =
+            new RedemptionYield(address(SUPERSTATE_TOKEN), address(oracle), address(USDC), address(COMPOUND_ADDR));
         redemptionProxyAdmin.upgradeAndCall(redemptionProxy, address(redemptionV3), "");
         redemption = IRedemptionYield(address(redemptionProxy));
     }
@@ -171,7 +172,7 @@ contract RedemptionYieldTestV3 is RedemptionYieldTestV2 {
 
         hoax(SUPERSTATE_TOKEN_HOLDER);
         vm.expectRevert(Pausable.EnforcedPause.selector);
-        redemption.redeem( 1);
+        redemption.redeem(1);
     }
 
     function testRedeemWithFee() public override {
@@ -196,12 +197,7 @@ contract RedemptionYieldTestV3 is RedemptionYieldTestV2 {
 
         hoax(owner);
         vm.expectEmit(true, true, true, true);
-        emit IRedemption.Withdraw({
-            token: address(USDC),
-            withdrawer: owner,
-            to: owner,
-            amount: compoundBalance
-        });
+        emit IRedemption.Withdraw({token: address(USDC), withdrawer: owner, to: owner, amount: compoundBalance});
 
         redemption.withdraw(address(COMPOUND), owner, compoundBalance);
 

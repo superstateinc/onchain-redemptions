@@ -78,7 +78,8 @@ contract RedemptionYieldTestV2 is RedemptionYieldTestV1 {
 
         vm.stopPrank();
 
-        redemptionV2 = new RedemptionYield(address(SUPERSTATE_TOKEN), address(oracle), address(USDC), address(COMPOUND_ADDR));
+        redemptionV2 =
+            new RedemptionYield(address(SUPERSTATE_TOKEN), address(oracle), address(USDC), address(COMPOUND_ADDR));
         redemptionProxyAdmin.upgradeAndCall(redemptionProxy, address(redemptionV2), "");
         redemption = IRedemptionYield(address(redemptionProxy));
 
@@ -160,7 +161,7 @@ contract RedemptionYieldTestV2 is RedemptionYieldTestV1 {
         vm.stopPrank();
     }
 
-    function testRedeemWithFee() public virtual override  {
+    function testRedeemWithFee() public virtual override {
         uint256 fee = 5; // 0.05%
         hoax(owner);
         redemption.setRedemptionFee(fee);
@@ -182,12 +183,7 @@ contract RedemptionYieldTestV2 is RedemptionYieldTestV1 {
 
         hoax(owner);
         vm.expectEmit(true, true, true, true);
-        emit IRedemption.Withdraw({
-            token: address(USDC),
-            withdrawer: owner,
-            to: owner,
-            amount: compoundBalance
-        });
+        emit IRedemption.Withdraw({token: address(USDC), withdrawer: owner, to: owner, amount: compoundBalance});
 
         redemption.withdraw(address(COMPOUND), owner, compoundBalance);
 
@@ -227,16 +223,12 @@ contract RedemptionYieldTestV2 is RedemptionYieldTestV1 {
             redeemerUstbBalanceBefore - superstateTokenRedeemAmount,
             "Redeemer has proper SUPERSTATE_TOKEN balance"
         );
-        
+
         // Calculate the expected amount based on the token amount and oracle price
         (, uint256 oraclePrice) = redemption.maxUstbRedemptionAmount();
         uint256 expectedUsdcAmount = (superstateTokenRedeemAmount * oraclePrice) / 1e6;
 
-        assertEq(
-            receiverUsdcBalanceAfter,
-            expectedUsdcAmount,
-            "Redeemer received correct USDC amount"
-        );
+        assertEq(receiverUsdcBalanceAfter, expectedUsdcAmount, "Redeemer received correct USDC amount");
 
         // For cUSDC balance, just ensure it's substantial (without exact comparison)
         assertGe(

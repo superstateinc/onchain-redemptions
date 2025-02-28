@@ -41,7 +41,7 @@ contract RedemptionIdleTestV1 is Test {
     ITransparentUpgradeableProxy public redemptionProxy;
     ProxyAdmin public redemptionProxyAdmin;
 
-    uint256 public forkBlockNumber = 19_976_215;  // Default, but can be overridden
+    uint256 public forkBlockNumber = 19_976_215; // Default, but can be overridden
     uint256 public rollBlockNumber = 20_993_400;
 
     function getAdminAddress(address _proxy) internal view returns (address) {

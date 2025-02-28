@@ -113,18 +113,10 @@ contract RedemptionIdleTestV2 is RedemptionIdleTestV1 {
         });
 
         vm.expectEmit(true, true, true, true);
-        emit IERC20.Transfer({
-            from: address(redemption),
-            to: SUPERSTATE_TOKEN_HOLDER,
-            value: 9999999999996
-        });
+        emit IERC20.Transfer({from: address(redemption), to: SUPERSTATE_TOKEN_HOLDER, value: 9999999999996});
 
         vm.expectEmit(true, true, true, true);
-        emit ISuperstateToken.Transfer({
-            from: address(redemption),
-            to: address(0),
-            value: superstateTokenAmount
-        });
+        emit ISuperstateToken.Transfer({from: address(redemption), to: address(0), value: superstateTokenAmount});
 
         vm.expectEmit(true, true, true, true);
         emit ISuperstateToken.OffchainRedeem({
