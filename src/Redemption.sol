@@ -180,6 +180,8 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
         return _getChainlinkPrice();
     }
 
+    function _redeem(address to, uint256 superstateTokenInAmount) internal virtual;
+    
     /**
      * @notice The ```calculateUstbIn``` function calculates how many Superstate tokens you need to redeem to receive a specific USDC amount
      * @param usdcOutAmount The desired amount of USDC to receive

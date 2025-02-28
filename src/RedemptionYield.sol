@@ -54,7 +54,7 @@ contract RedemptionYield is Redemption {
             / (usdPerUstbChainlinkRaw * USDC_PRECISION);
     }
 
-    function _redeem(address to, uint256 superstateTokenInAmount) internal {
+    function _redeem(address to, uint256 superstateTokenInAmount) internal override {
         _requireNotPaused();
 
         (uint256 usdcOutAmount,) = calculateUsdcOut(superstateTokenInAmount);
