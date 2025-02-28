@@ -125,12 +125,12 @@ contract RedemptionIdleTestV2 is RedemptionIdleTestV1 {
         });
 
         // Fourth - now we can expect the OffchainRedeem
-//        vm.expectEmit(true, true, true, true, address(SUPERSTATE_TOKEN));
-//        emit ISuperstateToken.OffchainRedeem({
-//            burner: address(redemptionProxy),
-//            src: address(redemptionProxy),
-//            amount: superstateTokenAmount
-//        });
+        vm.expectEmit(true, true, true, true, address(SUPERSTATE_TOKEN));
+        emit ISuperstateToken.OffchainRedeem({
+            burner: address(redemptionProxy),
+            src: address(redemptionProxy),
+            amount: superstateTokenAmount
+        });
 
         // Fifth - the RedeemV2 event
         vm.expectEmit(true, true, true, true, address(redemption));
