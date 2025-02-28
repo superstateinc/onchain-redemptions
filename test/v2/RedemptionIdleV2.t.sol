@@ -79,7 +79,7 @@ contract RedemptionIdleTestV2 is RedemptionIdleTestV1 {
         redemption = IRedemptionIdle(address(redemptionProxy));
     }
 
-    function testRedeemFocus() public virtual {
+    function testRedeem() public virtual override {
         assertEq(USDC.balanceOf(SUPERSTATE_TOKEN_HOLDER), 0);
 
         uint256 superstateTokenBalance = SUPERSTATE_TOKEN.balanceOf(SUPERSTATE_TOKEN_HOLDER);
