@@ -35,7 +35,7 @@ interface ISuperstateToken {
     );
     event Initialized(uint8 version);
     event Mint(address indexed minter, address indexed to, uint256 amount);
-    event OffchainRedeem(address burner, address src, uint256 amount);
+    event OffchainRedeem(address indexed burner, address indexed src, uint256 amount);
     event OwnershipTransferStarted(address indexed previousOwner, address indexed newOwner);
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event Paused(address account);
