@@ -181,7 +181,22 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
     }
 
     function _redeem(address to, uint256 superstateTokenInAmount) internal virtual;
-    
+
+    /// @notice The ```redeem``` function allows users to redeem SUPERSTATE_TOKEN for USDC at the current oracle price
+    /// @dev Will revert if oracle data is stale or there is not enough USDC in the contract
+    /// @param to The receiver address for the redeemed USDC
+    /// @param superstateTokenInAmount The amount of SUPERSTATE_TOKEN to redeem
+    function redeem(address to, uint256 superstateTokenInAmount) external override {
+        _redeem(to, superstateTokenInAmount);
+    }
+
+    /// @notice The ```redeem``` function allows users to redeem SUPERSTATE_TOKEN for USDC at the current oracle price
+    /// @dev Will revert if oracle data is stale or there is not enough USDC in the contract
+    /// @param superstateTokenInAmount The amount of SUPERSTATE_TOKEN to redeem
+    function redeem(uint256 superstateTokenInAmount) external override {
+        _redeem(msg.sender, superstateTokenInAmount);
+    }
+
     /**
      * @notice The ```calculateUstbIn``` function calculates how many Superstate tokens you need to redeem to receive a specific USDC amount
      * @param usdcOutAmount The desired amount of USDC to receive
@@ -241,15 +256,6 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
         view
         virtual
         returns (uint256 superstateTokenAmount, uint256 usdPerUstbChainlinkRaw);
-
-    /// @notice Abstract function that must be implemented by derived contracts
-    /// @param to The receiver address for the redeemed USDC
-    /// @param superstateTokenInAmount The amount of SUPERSTATE_TOKEN to redeem
-    function redeem(address to, uint256 superstateTokenInAmount) external virtual;
-
-    /// @notice Abstract function that must be implemented by derived contracts
-    /// @param superstateTokenInAmount The amount of SUPERSTATE_TOKEN to redeem
-    function redeem(uint256 superstateTokenInAmount) external virtual;
 
     /// @notice Abstract function that must be implemented by derived contracts
     /// @dev Must implement proper access controls
