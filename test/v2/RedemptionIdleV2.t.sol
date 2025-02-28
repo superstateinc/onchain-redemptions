@@ -97,6 +97,12 @@ contract RedemptionIdleTestV2 is RedemptionIdleTestV1 {
         vm.stopPrank();
 
         vm.startPrank(SUPERSTATE_TOKEN_HOLDER);
+        vm.expectEmit(true, true, true, true);
+        emit IERC20.Approval({
+            owner: SUPERSTATE_TOKEN_HOLDER,
+            spender: address(redemption),
+            value: superstateTokenAmount
+        });
         SUPERSTATE_TOKEN.approve(address(redemption), superstateTokenAmount);
 
         // First expectation - Transfer from holder to redemption
