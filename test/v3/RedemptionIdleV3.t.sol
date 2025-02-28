@@ -44,7 +44,6 @@ contract RedemptionIdleTestV3 is RedemptionIdleTestV2 {
         vm.startPrank(SUPERSTATE_TOKEN_HOLDER);
         SUPERSTATE_TOKEN.approve(address(redemption), superstateTokenAmount);
 
-        // First expectation - Transfer from holder to redemption
         vm.expectEmit(true, true, true, true, address(SUPERSTATE_TOKEN));
         emit ISuperstateToken.Transfer({
             from: SUPERSTATE_TOKEN_HOLDER,
@@ -52,8 +51,6 @@ contract RedemptionIdleTestV3 is RedemptionIdleTestV2 {
             value: superstateTokenAmount
         });
 
-        // We need to expect ALL events in sequence
-        // Second - USDC transfer to holder
         vm.expectEmit(true, true, true, true, address(USDC));
         emit IERC20.Transfer({
             from: address(redemption),
@@ -61,7 +58,6 @@ contract RedemptionIdleTestV3 is RedemptionIdleTestV2 {
             value: 9999999999996
         });
 
-        // Third - token burning (Transfer to zero address)
         vm.expectEmit(true, true, true, true, address(SUPERSTATE_TOKEN));
         emit ISuperstateToken.Transfer({
             from: address(redemption),
@@ -69,7 +65,6 @@ contract RedemptionIdleTestV3 is RedemptionIdleTestV2 {
             value: superstateTokenAmount
         });
 
-        // Fourth - now we can expect the OffchainRedeem
         vm.expectEmit(true, true, true, true, address(SUPERSTATE_TOKEN));
         emit ISuperstateToken.OffchainRedeem({
             burner: address(redemptionProxy),
@@ -77,7 +72,6 @@ contract RedemptionIdleTestV3 is RedemptionIdleTestV2 {
             amount: superstateTokenAmount
         });
 
-        // Fifth - the RedeemV2 event
         vm.expectEmit(true, true, true, true, address(redemption));
         emit IRedemption.RedeemV2({
             redeemer: SUPERSTATE_TOKEN_HOLDER,

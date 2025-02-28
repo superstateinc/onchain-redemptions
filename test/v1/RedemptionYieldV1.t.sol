@@ -10,7 +10,7 @@ import {Pausable} from "openzeppelin-contracts/contracts/utils/Pausable.sol";
 import {AllowListV1} from "ustb/src/allowlist/v1/AllowListV1.sol";
 import {Redemption} from "src/Redemption.sol";
 import {IRedemptionV2} from "src/interfaces/IRedemptionV2.sol";
-import {IRedemptionYieldV2} from "src/interfaces/IRedemptionYieldV2.sol";
+import {IRedemptionYield} from "src/interfaces/IRedemptionYield.sol";
 import {ISuperstateTokenV2} from "src/interfaces/ISuperstateTokenV2.sol";
 import {IComet} from "src/IComet.sol";
 import {deployRedemptionYieldV1} from "script/RedemptionYield.s.sol";
@@ -28,16 +28,16 @@ contract RedemptionYieldTestV1 is Test {
 
     IERC20 public constant SUPERSTATE_TOKEN = IERC20(0x43415eB6ff9DB7E26A15b704e7A3eDCe97d31C4e);
     IERC20 public constant USDC = IERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
-    IComet public constant COMPOUND = IComet(0xc3d688B66703497DAA19211EEdff47f25384cdc3);
+    address public constant COMPOUND_ADDR = 0xc3d688B66703497DAA19211EEdff47f25384cdc3;
+    IComet public constant COMPOUND = IComet(COMPOUND_ADDR);
     address public constant SUPERSTATE_TOKEN_HOLDER = 0xB8851D8fdd9a007A33f6b45BF602046644aBE81f;
-
     uint256 public constant USDC_AMOUNT = 1e13;
     uint256 public constant ENTITY_ID = 1;
 
     uint256 public constant MAXIMUM_ORACLE_DELAY = 93_600;
 
     SuperstateOracle public oracle;
-    IRedemptionYieldV2 public redemption;
+    IRedemptionYield public redemption;
     ITransparentUpgradeableProxy public redemptionProxy;
     ProxyAdmin public redemptionProxyAdmin;
 
@@ -79,7 +79,7 @@ contract RedemptionYieldTestV1 is Test {
             address(COMPOUND)
         );
 
-        redemption = IRedemptionYieldV2(address(proxy));
+        redemption = IRedemptionYield(address(proxy));
         redemptionProxy = ITransparentUpgradeableProxy(payable(proxy));
         redemptionProxyAdmin = ProxyAdmin(getAdminAddress(address(redemptionProxy)));
 
@@ -93,7 +93,7 @@ contract RedemptionYieldTestV1 is Test {
         vm.startPrank(owner);
         USDC.approve(address(redemption), USDC_AMOUNT);
         vm.expectEmit(true, true, true, true);
-        emit IRedemptionYieldV2.Deposit({token: address(USDC), depositor: owner, amount: USDC_AMOUNT});
+        emit IRedemptionYield.Deposit({token: address(USDC), depositor: owner, amount: USDC_AMOUNT});
         redemption.deposit(USDC_AMOUNT);
         vm.stopPrank();
 
@@ -166,7 +166,7 @@ contract RedemptionYieldTestV1 is Test {
         assertFalse(success);
     }
 
-    function testWithdraw() public {
+    function testWithdraw() public virtual {
         hoax(owner);
         vm.expectEmit(true, true, true, true);
         emit IRedemptionV2.Withdraw({token: address(USDC), withdrawer: owner, to: owner, amount: USDC_AMOUNT - 1});

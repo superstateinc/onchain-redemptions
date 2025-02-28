@@ -79,7 +79,7 @@ contract RedemptionIdleTestV2 is RedemptionIdleTestV1 {
         redemption = IRedemptionIdle(address(redemptionProxy));
     }
 
-    function testRedeemFocus() public virtual {
+    function testRedeem() public virtual override {
         assertEq(USDC.balanceOf(SUPERSTATE_TOKEN_HOLDER), 0);
 
         uint256 superstateTokenBalance = SUPERSTATE_TOKEN.balanceOf(SUPERSTATE_TOKEN_HOLDER);
@@ -105,7 +105,6 @@ contract RedemptionIdleTestV2 is RedemptionIdleTestV1 {
         });
         SUPERSTATE_TOKEN.approve(address(redemption), superstateTokenAmount);
 
-        // First expectation - Transfer from holder to redemption
         vm.expectEmit(true, true, true, true);
         emit ISuperstateToken.Transfer({
             from: SUPERSTATE_TOKEN_HOLDER,
@@ -113,8 +112,6 @@ contract RedemptionIdleTestV2 is RedemptionIdleTestV1 {
             value: superstateTokenAmount
         });
 
-        // We need to expect ALL events in sequence
-        // Second - USDC transfer to holder
         vm.expectEmit(true, true, true, true);
         emit IERC20.Transfer({
             from: address(redemption),
@@ -122,7 +119,6 @@ contract RedemptionIdleTestV2 is RedemptionIdleTestV1 {
             value: 9999999999996
         });
 
-        // Third - token burning (Transfer to zero address)
         vm.expectEmit(true, true, true, true);
         emit ISuperstateToken.Transfer({
             from: address(redemption),
@@ -130,7 +126,6 @@ contract RedemptionIdleTestV2 is RedemptionIdleTestV1 {
             value: superstateTokenAmount
         });
 
-        // Fourth - now we can expect the OffchainRedeem
         vm.expectEmit(true, true, true, true);
         emit ISuperstateToken.OffchainRedeem({
             burner: address(redemptionProxy),
@@ -138,7 +133,6 @@ contract RedemptionIdleTestV2 is RedemptionIdleTestV1 {
             amount: superstateTokenAmount
         });
 
-        // Fifth - the RedeemV2 event
         vm.expectEmit(true, true, true, true);
         emit IRedemption.RedeemV2({
             redeemer: SUPERSTATE_TOKEN_HOLDER,
