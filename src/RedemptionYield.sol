@@ -54,6 +54,10 @@ contract RedemptionYield is Redemption {
             / (usdPerUstbChainlinkRaw * USDC_PRECISION);
     }
 
+    /// @notice The ```_redeem``` function allows users to redeem SUPERSTATE_TOKEN for USDC at the current oracle price
+    /// @dev Will revert if oracle data is stale or there is not enough USDC in the contract
+    /// @param to The receiver address for the redeemed USDC
+    /// @param superstateTokenInAmount The amount of SUPERSTATE_TOKEN to redeem
     function _redeem(address to, uint256 superstateTokenInAmount) internal override {
         _requireNotPaused();
 
