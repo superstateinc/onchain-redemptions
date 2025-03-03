@@ -68,6 +68,11 @@ contract RedemptionIdleTestV1 is Test {
         hoax(owner);
         oracle.addCheckpoint(uint64(1726866000), 1726866001, 10_379_322, false);
 
+        // 4460 diff between navs = 1726866000 - 1726779600
+        // 86,400 seconds between checkpoints
+        // diff between
+        // 10379322 + 4460* 1 / 86,400 = 10,379,322 interpolated nav/s
+
         (,,, address proxy) = deployRedemptionIdleV1(
             address(SUPERSTATE_TOKEN),
             address(oracle),
