@@ -10,7 +10,6 @@ import {ISuperstateToken} from "src/ISuperstateToken.sol";
 import {SuperstateOracle} from "src/oracle/SuperstateOracle.sol";
 import {Pausable} from "openzeppelin-contracts/contracts/utils/Pausable.sol";
 import {IRedemptionIdle} from "../../lib/ustb/lib/onchain-redemptions/src/interfaces/IRedemptionIdle.sol";
-import {IComet} from "src/IComet.sol";
 
 contract RedemptionYieldTestV3 is RedemptionYieldTestV2 {
     RedemptionYield public redemptionV3;
