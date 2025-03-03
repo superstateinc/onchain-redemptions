@@ -136,16 +136,17 @@ contract RedemptionYieldTestV2 is RedemptionYieldTestV1 {
 
         uint256 redeemerUsdcBalance = USDC.balanceOf(SUPERSTATE_TOKEN_HOLDER);
         uint256 redemptionContractCusdcBalance = COMPOUND.balanceOf(address(redemption));
-        uint256 lostToRounding = 1;
-        uint256 additionalLoss = 2; // Account for the additional 2 tokens missing
+        // compound balance of redemption contract may lose some token to math precision
+        // lostToRounding covers the potential discrepancy.
+        uint256 lostToRounding = 3;
 
         assertEq(SUPERSTATE_TOKEN.balanceOf(SUPERSTATE_TOKEN_HOLDER), superstateTokenBalance - superstateTokenAmount);
-        assertEq(USDC_AMOUNT - redemptionContractCusdcBalance - lostToRounding - additionalLoss, redeemerUsdcBalance);
+        assertEq(USDC_AMOUNT - redemptionContractCusdcBalance - lostToRounding, redeemerUsdcBalance);
 
         assertEq(SUPERSTATE_TOKEN.balanceOf(address(redemption)), 0);
 
-        assertEq(redemptionContractCusdcBalance, lostToRounding);
-        assertEq(redemptionContractCusdcBalance, USDC_AMOUNT - redeemerUsdcBalance - lostToRounding - additionalLoss);
+        assertEq(redemptionContractCusdcBalance, 1);
+        assertEq(redemptionContractCusdcBalance, USDC_AMOUNT - redeemerUsdcBalance - lostToRounding);
     }
 
     function testRedeemAmountTooLarge() public virtual override {
