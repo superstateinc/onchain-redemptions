@@ -7,10 +7,11 @@ import {Vm} from "forge-std/Vm.sol";
 import {IERC20} from "openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {Ownable} from "openzeppelin-contracts/contracts/access/Ownable.sol";
 import {Pausable} from "openzeppelin-contracts/contracts/utils/Pausable.sol";
-import {AllowList} from "ustb/src/AllowList.sol";
+import {AllowListV1} from "ustb/src/allowlist/v1/AllowListV1.sol";
 import {Redemption} from "src/Redemption.sol";
 import {IRedemptionV2} from "src/interfaces/IRedemptionV2.sol";
 import {IRedemptionIdleV2} from "src/interfaces/IRedemptionIdleV2.sol";
+import {IRedemptionIdle} from "src/interfaces/IRedemptionIdle.sol";
 import {ISuperstateTokenV2} from "src/interfaces/ISuperstateTokenV2.sol";
 import {IComet} from "src/IComet.sol";
 import {deployRedemptionIdleV1} from "script/RedemptionIdle.s.sol";
@@ -23,7 +24,7 @@ import "openzeppelin-contracts/contracts/proxy/transparent/ProxyAdmin.sol";
 contract RedemptionIdleTestV1 is Test {
     address public owner = address(this);
 
-    AllowList public constant allowList = AllowList(0x42d75C8FdBBF046DF0Fe1Ff388DA16fF99dE8149);
+    AllowListV1 public constant allowListV1 = AllowListV1(0x42d75C8FdBBF046DF0Fe1Ff388DA16fF99dE8149);
     address public allowListAdmin = 0x8C7Db8A96d39F76D9f456db23d591C2FDd0e2F8a;
 
     IERC20 public constant SUPERSTATE_TOKEN = IERC20(0x43415eB6ff9DB7E26A15b704e7A3eDCe97d31C4e);
@@ -36,9 +37,12 @@ contract RedemptionIdleTestV1 is Test {
     uint256 public constant MAXIMUM_ORACLE_DELAY = 93_600;
 
     SuperstateOracle public oracle;
-    IRedemptionIdleV2 public redemption;
+    IRedemptionIdle public redemption;
     ITransparentUpgradeableProxy public redemptionProxy;
     ProxyAdmin public redemptionProxyAdmin;
+
+    uint256 public forkBlockNumber = 19_976_215; // Default, but can be overridden
+    uint256 public rollBlockNumber = 20_993_400;
 
     function getAdminAddress(address _proxy) internal view returns (address) {
         address CHEATCODE_ADDRESS = 0x7109709ECfa91a80626fF3989D68f67F5b1DD12D;
@@ -49,14 +53,12 @@ contract RedemptionIdleTestV1 is Test {
     }
 
     function setUp() public virtual {
-        vm.createSelectFork(vm.envString("ETH_RPC_URL"), 19_976_215);
-        vm.roll(20_993_400);
+        vm.createSelectFork(vm.envString("ETH_RPC_URL"), forkBlockNumber); // Use variable
+        vm.roll(rollBlockNumber); // Use variable
+        vm.warp(1726779601); // Use variable
 
         (address payable _addressOracle,,) = deploySuperstateOracle(owner, address(SUPERSTATE_TOKEN), 1_000_000);
-
         oracle = SuperstateOracle(_addressOracle);
-
-        vm.warp(1726_779_601);
 
         hoax(owner);
         oracle.addCheckpoint(1726779600, 1726779601, 10_374_862, false);
@@ -65,7 +67,6 @@ contract RedemptionIdleTestV1 is Test {
 
         hoax(owner);
         oracle.addCheckpoint(uint64(1726866000), 1726866001, 10_379_322, false);
-        // result = laterCheckpointNavs + ((laterCheckpointNavs - earlierCheckpointNavs) * (targetTimestamp - laterCheckpointTimestamp)) / (laterCheckpointTimestamp - earlierCheckpointTimestamp)
 
         // 4460 diff between navs = 1726866000 - 1726779600
         // 86,400 seconds between checkpoints
@@ -83,12 +84,13 @@ contract RedemptionIdleTestV1 is Test {
             0
         );
 
-        redemption = IRedemptionIdleV2(address(proxy));
+        redemption = IRedemptionIdle(address(proxy));
         redemptionProxy = ITransparentUpgradeableProxy(payable(proxy));
         redemptionProxyAdmin = ProxyAdmin(getAdminAddress(address(redemptionProxy)));
 
         // 10 million
         deal(address(USDC), SUPERSTATE_TOKEN_HOLDER, USDC_AMOUNT);
+        deal(address(SUPERSTATE_TOKEN), SUPERSTATE_TOKEN_HOLDER, USDC_AMOUNT);
 
         hoax(SUPERSTATE_TOKEN_HOLDER);
         USDC.transfer(address(redemption), USDC_AMOUNT);
@@ -96,7 +98,7 @@ contract RedemptionIdleTestV1 is Test {
         assertGe(USDC.balanceOf(address(redemption)), 0);
 
         vm.startPrank(allowListAdmin);
-        allowList.setEntityIdForAddress(ENTITY_ID, address(redemption));
+        allowListV1.setEntityIdForAddress(ENTITY_ID, address(redemption));
         vm.stopPrank();
     }
 

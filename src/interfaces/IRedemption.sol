@@ -67,6 +67,7 @@ interface IRedemption {
     function redemptionFee() external view returns (uint256);
     function pause() external;
     function redeem(address to, uint256 superstateTokenInAmount) external;
+    function redeem(uint256 superstateTokenInAmount) external;
     function setMaximumOracleDelay(uint256 _newMaxOracleDelay) external;
     function setSweepDestination(address _newSweepDestination) external;
     function setRedemptionFee(uint256 _newFee) external;
