@@ -355,7 +355,6 @@ contract RedemptionIdleTestV1 is Test {
 
         // Cross check by calculating USDC out with the calculated USTB amount
         (uint256 usdcOutVerify,) = redemption.calculateUsdcOut(ustbInAmount);
-
         // Allow for minor rounding differences
         assertApproxEqAbs(usdcOutAmount, usdcOutVerify, 6);
         assertEq(feedPrice, 10_379_322);

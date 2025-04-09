@@ -125,11 +125,12 @@ contract RedemptionYieldTestV2 is RedemptionYieldTestV1 {
 
         vm.expectEmit(true, true, true, true);
         // ~1e13, the original USDC amount
-        emit IRedemption.RedeemV2({
+        emit IRedemption.RedeemV3({
             redeemer: SUPERSTATE_TOKEN_HOLDER,
             to: SUPERSTATE_TOKEN_HOLDER,
             superstateTokenInAmount: superstateTokenAmount,
-            usdcOutAmount: 9999999999996
+            usdcOutAmount: 9999999999996,
+            usdcOutAmountWithFee: 9999999999996
         });
         redemption.redeem(superstateTokenAmount);
         vm.stopPrank();
