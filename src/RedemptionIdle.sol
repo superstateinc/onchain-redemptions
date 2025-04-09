@@ -50,7 +50,7 @@ contract RedemptionIdle is Redemption {
     function _redeem(address to, uint256 superstateTokenInAmount) internal override {
         _requireNotPaused();
 
-        (uint256 usdcOutAmount, uint256 usdcOutAmountWithFee, ) = calculateUsdcOut(superstateTokenInAmount);
+        (uint256 usdcOutAmount, uint256 usdcOutAmountWithFee, ) = _calculateUsdcOut(superstateTokenInAmount);
 
         if (USDC.balanceOf(address(this)) < usdcOutAmount) revert InsufficientBalance();
 

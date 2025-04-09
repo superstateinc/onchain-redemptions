@@ -62,7 +62,7 @@ interface IRedemption {
     function calculateUsdcOut(uint256 superstateTokenInAmount)
         external
         view
-        returns (uint256 usdcOutAmount, uint256 usdcOutAmountWithFee, uint256 usdPerUstbChainlinkRaw);
+        returns (uint256 usdcOutAmount, uint256 usdPerUstbChainlinkRaw);
     function calculateUstbIn(uint256 usdcOutAmount)
         external
         view
