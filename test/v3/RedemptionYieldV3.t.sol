@@ -185,7 +185,16 @@ contract RedemptionYieldTestV3 is RedemptionYieldTestV2 {
 
         vm.startPrank(SUPERSTATE_TOKEN_HOLDER);
         SUPERSTATE_TOKEN.approve(address(redemption), superstateTokenAmount);
-        redemption.redeem(superstateTokenAmount);
+        vm.expectEmit(true, true, true, true, address(redemption));
+        //this is performed with fee
+        emit IRedemption.RedeemV2({
+            redeemer: SUPERSTATE_TOKEN_HOLDER,
+            to: SUPERSTATE_REDEMPTION_RECEIVER,
+            superstateTokenInAmount: superstateTokenAmount,
+            usdcOutAmountAfterFee: 9999999999988,
+            usdcOutAmountBeforeFee: 10005002501238
+        });
+        redemption.redeem(SUPERSTATE_REDEMPTION_RECEIVER, superstateTokenAmount);
         vm.stopPrank();
 
         uint256 receiverUsdcBalance = USDC.balanceOf(SUPERSTATE_TOKEN_HOLDER);
