@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.28;
-
 import {Test, console} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 
@@ -130,7 +129,8 @@ contract RedemptionIdleTestV2 is RedemptionIdleTestV1 {
             redeemer: SUPERSTATE_TOKEN_HOLDER,
             to: SUPERSTATE_TOKEN_HOLDER,
             superstateTokenInAmount: superstateTokenAmount,
-            usdcOutAmount: 9999999999996
+            usdcOutAmountAfterFee: 9999999999996,
+            usdcOutAmountBeforeFee: 9999999999996
         });
 
         redemption.redeem(superstateTokenAmount);

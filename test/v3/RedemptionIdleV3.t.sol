@@ -65,11 +65,14 @@ contract RedemptionIdleTestV3 is RedemptionIdleTestV2 {
         });
 
         vm.expectEmit(true, true, true, true, address(redemption));
+        //this is performed without fee, thus the amount is expected to be the same
+        //see testRedeemWithFee for fee event diff
         emit IRedemption.RedeemV2({
             redeemer: SUPERSTATE_TOKEN_HOLDER,
             to: SUPERSTATE_REDEMPTION_RECEIVER,
             superstateTokenInAmount: superstateTokenAmount,
-            usdcOutAmount: 9999999999996
+            usdcOutAmountAfterFee: 9999999999996,
+            usdcOutAmountBeforeFee: 9999999999996
         });
 
         redemption.redeem(SUPERSTATE_REDEMPTION_RECEIVER, superstateTokenAmount);
@@ -173,8 +176,18 @@ contract RedemptionIdleTestV3 is RedemptionIdleTestV2 {
 
         (uint256 superstateTokenAmount,) = redemption.maxUstbRedemptionAmount();
 
+        
         vm.startPrank(SUPERSTATE_TOKEN_HOLDER);
         SUPERSTATE_TOKEN.approve(address(redemption), superstateTokenAmount);
+        vm.expectEmit(true, true, true, true, address(redemption));
+        //this is performed with fee
+        emit IRedemption.RedeemV2({
+            redeemer: SUPERSTATE_TOKEN_HOLDER,
+            to: SUPERSTATE_REDEMPTION_RECEIVER,
+            superstateTokenInAmount: superstateTokenAmount,
+            usdcOutAmountAfterFee: 9999999999998,
+            usdcOutAmountBeforeFee: 10005002501248
+        });
         redemption.redeem(SUPERSTATE_REDEMPTION_RECEIVER, superstateTokenAmount);
         vm.stopPrank();
 

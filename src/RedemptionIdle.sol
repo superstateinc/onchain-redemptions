@@ -30,7 +30,7 @@ contract RedemptionIdle is Redemption {
         override
         returns (uint256 superstateTokenAmount, uint256 usdPerUstbChainlinkRaw)
     {
-        uint256 usdcOutAmountWithFee =
+        uint256 usdcOutAmountBeforeFee =
             (USDC.balanceOf(address(this)) * FEE_DENOMINATOR) / (FEE_DENOMINATOR - redemptionFee);
 
         (bool isBadData,, uint256 usdPerUstbChainlinkRaw_) = _getChainlinkPrice();
@@ -39,7 +39,7 @@ contract RedemptionIdle is Redemption {
         usdPerUstbChainlinkRaw = usdPerUstbChainlinkRaw_;
 
         // Round down, unlike `calculateUstbIn`, that way user doesn't send in more USTB than can be redeemed
-        superstateTokenAmount = (usdcOutAmountWithFee * CHAINLINK_FEED_PRECISION * SUPERSTATE_TOKEN_PRECISION)
+        superstateTokenAmount = (usdcOutAmountBeforeFee * CHAINLINK_FEED_PRECISION * SUPERSTATE_TOKEN_PRECISION)
             / (usdPerUstbChainlinkRaw * USDC_PRECISION);
     }
 
@@ -50,19 +50,20 @@ contract RedemptionIdle is Redemption {
     function _redeem(address to, uint256 superstateTokenInAmount) internal override {
         _requireNotPaused();
 
-        (uint256 usdcOutAmount,) = calculateUsdcOut(superstateTokenInAmount);
+        (uint256 usdcOutAmountAfterFee, uint256 usdcOutAmountBeforeFee, ) = _calculateUsdcOut(superstateTokenInAmount);
 
-        if (USDC.balanceOf(address(this)) < usdcOutAmount) revert InsufficientBalance();
+        if (USDC.balanceOf(address(this)) < usdcOutAmountAfterFee) revert InsufficientBalance();
 
         SUPERSTATE_TOKEN.safeTransferFrom({from: msg.sender, to: address(this), value: superstateTokenInAmount});
-        USDC.safeTransfer({to: to, value: usdcOutAmount});
+        USDC.safeTransfer({to: to, value: usdcOutAmountAfterFee});
         ISuperstateToken(address(SUPERSTATE_TOKEN)).offchainRedeem(superstateTokenInAmount);
 
         emit RedeemV2({
             redeemer: msg.sender,
             to: to,
             superstateTokenInAmount: superstateTokenInAmount,
-            usdcOutAmount: usdcOutAmount
+            usdcOutAmountAfterFee: usdcOutAmountAfterFee,
+            usdcOutAmountBeforeFee: usdcOutAmountBeforeFee
         });
     }
 
