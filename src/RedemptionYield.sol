@@ -61,7 +61,7 @@ contract RedemptionYield is Redemption {
     function _redeem(address to, uint256 superstateTokenInAmount) internal override {
         _requireNotPaused();
 
-        (uint256 usdcOutAmount,) = calculateUsdcOut(superstateTokenInAmount);
+        (uint256 usdcOutAmount, uint256 usdcOutAmountWithFee, ) = calculateUsdcOut(superstateTokenInAmount);
 
         if (COMPOUND.balanceOf(address(this)) < usdcOutAmount) revert InsufficientBalance();
 
@@ -69,11 +69,12 @@ contract RedemptionYield is Redemption {
         COMPOUND.withdrawTo({to: msg.sender, asset: address(USDC), amount: usdcOutAmount});
         ISuperstateToken(address(SUPERSTATE_TOKEN)).offchainRedeem(superstateTokenInAmount);
 
-        emit RedeemV2({
+        emit RedeemV3({
             redeemer: msg.sender,
             to: to,
             superstateTokenInAmount: superstateTokenInAmount,
-            usdcOutAmount: usdcOutAmount
+            usdcOutAmount: usdcOutAmount,
+            usdcOutAmountWithFee: usdcOutAmountWithFee
         });
     }
 

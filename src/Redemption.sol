@@ -227,12 +227,13 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
      * @notice The ```calculateUsdcOut``` function calculates the total amount of USDC you'll receive for redeeming Superstate tokens
      * @param superstateTokenInAmount The amount of Superstate tokens to redeem
      * @return usdcOutAmount The amount of USDC received for redeeming superstateTokenInAmount
+     * @return usdcOutAmountWithFee The amount of USDC received for redeeming superstateTokenInAmount, including the fee
      * @return usdPerUstbChainlinkRaw The raw chainlink price used in calculation
      */
     function calculateUsdcOut(uint256 superstateTokenInAmount)
         public
         view
-        returns (uint256 usdcOutAmount, uint256 usdPerUstbChainlinkRaw)
+        returns (uint256 usdcOutAmount, uint256 usdcOutAmountWithFee, uint256 usdPerUstbChainlinkRaw)
     {
         if (superstateTokenInAmount == 0) revert BadArgs();
 
@@ -241,11 +242,10 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
 
         usdPerUstbChainlinkRaw = usdPerUstbChainlinkRaw_;
 
-        uint256 rawUsdcAmount = (superstateTokenInAmount * usdPerUstbChainlinkRaw * USDC_PRECISION)
+        usdcOutAmountWithFee = (superstateTokenInAmount * usdPerUstbChainlinkRaw * USDC_PRECISION)
             / (CHAINLINK_FEED_PRECISION * SUPERSTATE_TOKEN_PRECISION);
 
-        uint256 fee = calculateFee(rawUsdcAmount);
-        usdcOutAmount = rawUsdcAmount - fee;
+        usdcOutAmount = usdcOutAmountWithFee - calculateFee(usdcOutAmountWithFee);
     }
 
     /// @notice Abstract function that must be implemented by derived contracts
