@@ -30,7 +30,7 @@ contract RedemptionIdle is Redemption {
         override
         returns (uint256 superstateTokenAmount, uint256 usdPerUstbChainlinkRaw)
     {
-        uint256 usdcOutAmountWithFee =
+        uint256 usdcOutAmountBeforeFee =
             (USDC.balanceOf(address(this)) * FEE_DENOMINATOR) / (FEE_DENOMINATOR - redemptionFee);
 
         (bool isBadData,, uint256 usdPerUstbChainlinkRaw_) = _getChainlinkPrice();
@@ -39,7 +39,7 @@ contract RedemptionIdle is Redemption {
         usdPerUstbChainlinkRaw = usdPerUstbChainlinkRaw_;
 
         // Round down, unlike `calculateUstbIn`, that way user doesn't send in more USTB than can be redeemed
-        superstateTokenAmount = (usdcOutAmountWithFee * CHAINLINK_FEED_PRECISION * SUPERSTATE_TOKEN_PRECISION)
+        superstateTokenAmount = (usdcOutAmountBeforeFee * CHAINLINK_FEED_PRECISION * SUPERSTATE_TOKEN_PRECISION)
             / (usdPerUstbChainlinkRaw * USDC_PRECISION);
     }
 
