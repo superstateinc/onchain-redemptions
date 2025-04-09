@@ -69,8 +69,8 @@ contract RedemptionIdleTestV3 is RedemptionIdleTestV2 {
             redeemer: SUPERSTATE_TOKEN_HOLDER,
             to: SUPERSTATE_REDEMPTION_RECEIVER,
             superstateTokenInAmount: superstateTokenAmount,
-            usdcOutAmount: 9999999999996,
-            usdcOutAmountWithFee: 9999999999996
+            usdcOutAmountAfterFee: 9999999999996,
+            usdcOutAmountBeforeFee: 9999999999996
         });
 
         redemption.redeem(SUPERSTATE_REDEMPTION_RECEIVER, superstateTokenAmount);

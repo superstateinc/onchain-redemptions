@@ -226,28 +226,28 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
     /**
      * @notice The ```calculateUsdcOut``` function calculates the total amount of USDC you'll receive for redeeming Superstate tokens
      * @param superstateTokenInAmount The amount of Superstate tokens to redeem
-     * @return usdcOutAmount The amount of USDC received for redeeming superstateTokenInAmount
+     * @return usdcOutAmountAfterFee The amount of USDC received for redeeming superstateTokenInAmount, after the fee is deducted
      * @return usdPerUstbChainlinkRaw The raw chainlink price used in calculation
      */
     function calculateUsdcOut(uint256 superstateTokenInAmount)
         public
         view
-        returns (uint256 usdcOutAmount, uint256 usdPerUstbChainlinkRaw)
+        returns (uint256 usdcOutAmountAfterFee, uint256 usdPerUstbChainlinkRaw)
     {
-        (usdcOutAmount,,usdPerUstbChainlinkRaw) = _calculateUsdcOut(superstateTokenInAmount);
+        (usdcOutAmountAfterFee,,usdPerUstbChainlinkRaw) = _calculateUsdcOut(superstateTokenInAmount);
     }
 
     /**
      * @notice The ```_calculateUsdcOut``` function calculates the total amount of USDC you'll receive for redeeming Superstate tokens
      * @param superstateTokenInAmount The amount of Superstate tokens to redeem
-     * @return usdcOutAmount The amount of USDC received for redeeming superstateTokenInAmount
-     * @return usdcOutAmountWithFee The amount of USDC received for redeeming superstateTokenInAmount, including the fee
+     * @return usdcOutAmountAfterFee The amount of USDC received for redeeming superstateTokenInAmount, after the fee is deducted
+     * @return usdcOutAmountBeforeFee The amount of USDC received for redeeming superstateTokenInAmount, before the fee is deducted
      * @return usdPerUstbChainlinkRaw The raw chainlink price used in calculation
      */
     function _calculateUsdcOut(uint256 superstateTokenInAmount)
         internal
         view
-        returns (uint256 usdcOutAmount, uint256 usdcOutAmountWithFee, uint256 usdPerUstbChainlinkRaw)
+        returns (uint256 usdcOutAmountAfterFee, uint256 usdcOutAmountBeforeFee, uint256 usdPerUstbChainlinkRaw)
     {
         if (superstateTokenInAmount == 0) revert BadArgs();
 
@@ -256,10 +256,10 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
 
         usdPerUstbChainlinkRaw = usdPerUstbChainlinkRaw_;
 
-        usdcOutAmountWithFee = (superstateTokenInAmount * usdPerUstbChainlinkRaw * USDC_PRECISION)
+        usdcOutAmountBeforeFee = (superstateTokenInAmount * usdPerUstbChainlinkRaw * USDC_PRECISION)
             / (CHAINLINK_FEED_PRECISION * SUPERSTATE_TOKEN_PRECISION);
 
-        usdcOutAmount = usdcOutAmountWithFee - calculateFee(usdcOutAmountWithFee);
+        usdcOutAmountAfterFee = usdcOutAmountBeforeFee - calculateFee(usdcOutAmountBeforeFee);
     }
 
     /// @notice Abstract function that must be implemented by derived contracts

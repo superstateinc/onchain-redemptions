@@ -129,8 +129,8 @@ contract RedemptionYieldTestV2 is RedemptionYieldTestV1 {
             redeemer: SUPERSTATE_TOKEN_HOLDER,
             to: SUPERSTATE_TOKEN_HOLDER,
             superstateTokenInAmount: superstateTokenAmount,
-            usdcOutAmount: 9999999999996,
-            usdcOutAmountWithFee: 9999999999996
+            usdcOutAmountAfterFee: 9999999999996,
+            usdcOutAmountBeforeFee: 9999999999996
         });
         redemption.redeem(superstateTokenAmount);
         vm.stopPrank();

@@ -50,20 +50,20 @@ contract RedemptionIdle is Redemption {
     function _redeem(address to, uint256 superstateTokenInAmount) internal override {
         _requireNotPaused();
 
-        (uint256 usdcOutAmount, uint256 usdcOutAmountWithFee, ) = _calculateUsdcOut(superstateTokenInAmount);
+        (uint256 usdcOutAmountAfterFee, uint256 usdcOutAmountBeforeFee, ) = _calculateUsdcOut(superstateTokenInAmount);
 
-        if (USDC.balanceOf(address(this)) < usdcOutAmount) revert InsufficientBalance();
+        if (USDC.balanceOf(address(this)) < usdcOutAmountAfterFee) revert InsufficientBalance();
 
         SUPERSTATE_TOKEN.safeTransferFrom({from: msg.sender, to: address(this), value: superstateTokenInAmount});
-        USDC.safeTransfer({to: to, value: usdcOutAmount});
+        USDC.safeTransfer({to: to, value: usdcOutAmountAfterFee});
         ISuperstateToken(address(SUPERSTATE_TOKEN)).offchainRedeem(superstateTokenInAmount);
 
         emit RedeemV2({
             redeemer: msg.sender,
             to: to,
             superstateTokenInAmount: superstateTokenInAmount,
-            usdcOutAmount: usdcOutAmount,
-            usdcOutAmountWithFee: usdcOutAmountWithFee
+            usdcOutAmountAfterFee: usdcOutAmountAfterFee,
+            usdcOutAmountBeforeFee: usdcOutAmountBeforeFee
         });
     }
 
