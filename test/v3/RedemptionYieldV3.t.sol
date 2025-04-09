@@ -59,7 +59,7 @@ contract RedemptionYieldTestV3 is RedemptionYieldTestV2 {
         });
         vm.expectEmit(true, true, true, true);
         // ~1e13, the original USDC amount
-        emit IRedemption.RedeemV3({
+        emit IRedemption.RedeemV2({
             redeemer: SUPERSTATE_TOKEN_HOLDER,
             to: SUPERSTATE_REDEMPTION_RECEIVER,
             superstateTokenInAmount: superstateTokenAmount,

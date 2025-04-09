@@ -65,7 +65,7 @@ contract RedemptionIdleTestV3 is RedemptionIdleTestV2 {
         });
 
         vm.expectEmit(true, true, true, true, address(redemption));
-        emit IRedemption.RedeemV3({
+        emit IRedemption.RedeemV2({
             redeemer: SUPERSTATE_TOKEN_HOLDER,
             to: SUPERSTATE_REDEMPTION_RECEIVER,
             superstateTokenInAmount: superstateTokenAmount,

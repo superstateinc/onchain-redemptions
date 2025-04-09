@@ -69,7 +69,7 @@ contract RedemptionYield is Redemption {
         COMPOUND.withdrawTo({to: msg.sender, asset: address(USDC), amount: usdcOutAmount});
         ISuperstateToken(address(SUPERSTATE_TOKEN)).offchainRedeem(superstateTokenInAmount);
 
-        emit RedeemV3({
+        emit RedeemV2({
             redeemer: msg.sender,
             to: to,
             superstateTokenInAmount: superstateTokenInAmount,
