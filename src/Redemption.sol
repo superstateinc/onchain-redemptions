@@ -230,7 +230,7 @@ abstract contract Redemption is PausableUpgradeable, Ownable2StepUpgradeable, IR
      * @return usdPerUstbChainlinkRaw The raw chainlink price used in calculation
      */
     function calculateUsdcOut(uint256 superstateTokenInAmount)
-        public
+        external
         view
         returns (uint256 usdcOutAmountAfterFee, uint256 usdPerUstbChainlinkRaw)
     {
