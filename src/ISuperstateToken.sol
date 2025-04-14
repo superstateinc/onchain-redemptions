@@ -49,11 +49,12 @@ interface ISuperstateToken {
         uint96 oldFee,
         uint96 newFee
     );
-    event Subscribe(
+    event SubscribeV2(
         address indexed subscriber,
+        address indexed to,
         address stablecoin,
-        uint256 stablecoinInAmount,
         uint256 stablecoinInAmountAfterFee,
+        uint256 stablecoinInAmountBeforeFee,
         uint256 superstateTokenOutAmount
     );
     event Transfer(address indexed from, address indexed to, uint256 value);
@@ -116,6 +117,7 @@ interface ISuperstateToken {
     function setRedemptionContract(address _newRedemptionContract) external;
     function setStablecoinConfig(address stablecoin, address newSweepDestination, uint96 newFee) external;
     function subscribe(uint256 inAmount, address stablecoin) external;
+    function subscribe(address to, uint256 inAmount, address stablecoin) external;
     function superstateOracle() external view returns (address);
     function supportedStablecoins(address stablecoin) external view returns (address sweepDestination, uint96 fee);
     function symbol() external view returns (string memory);
