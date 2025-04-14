@@ -49,11 +49,12 @@ interface ISuperstateToken {
         uint96 oldFee,
         uint96 newFee
     );
-    event Subscribe(
+    event SubscribeV2(
         address indexed subscriber,
+        address indexed to,
         address stablecoin,
-        uint256 stablecoinInAmount,
         uint256 stablecoinInAmountAfterFee,
+        uint256 stablecoinInAmountBeforeFee,
         uint256 superstateTokenOutAmount
     );
     event Transfer(address indexed from, address indexed to, uint256 value);
